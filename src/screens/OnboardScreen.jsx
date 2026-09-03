@@ -15,18 +15,18 @@ export function OnboardScreen() {
 
   const steps = [
     {
-      icon: '📚',
+      icon: <Icon name="book" size={48} />,
       title: t('onboardTitle'),
       desc: t('onboardDesc'),
     },
     {
-      icon: '📲',
+      icon: <Icon name="download" size={48} />,
       title: t('installTitle'),
       desc: t('installDesc'),
       isInstall: true,
     },
     {
-      icon: '🔔',
+      icon: <Icon name="bell" size={48} />,
       title: t('notifications'),
       desc: '',
     },
@@ -60,7 +60,7 @@ export function OnboardScreen() {
               {t('enable')}
             </button>
           )}
-          <button className="btn-text" onClick={() => a.completeOnboard()}>{t('back')}</button>
+          <button className="btn-text" onClick={() => a.completeOnboard()}>{t('skip')}</button>
         </div>
       </div>
     </div>
@@ -78,7 +78,7 @@ function InstallGuide() {
 
   if (ua === 'ios') return (
     <div className="install-guide">
-      <div className="install-step"><span className="install-num">1</span><span>Tap <strong>Share</strong> ▣ in Safari</span></div>
+      <div className="install-step"><span className="install-num">1</span><span>Tap <strong>Share</strong> in Safari</span></div>
       <div className="install-step"><span className="install-num">2</span><span>Select <strong>Add to Home Screen</strong></span></div>
       <div className="install-step"><span className="install-num">3</span><span>Tap <strong>Add</strong></span></div>
     </div>

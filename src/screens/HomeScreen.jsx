@@ -1,7 +1,8 @@
+import { useState, useEffect } from 'react'
 import { useStore } from '../store.jsx'
 import { Icon } from '../components/Icon.jsx'
 import { Loader } from '../components/Loader.jsx'
-import { WEEKDAYS, lessonColor, lessonTime, filterBySubgroup } from '../lib/format.js'
+import { WEEKDAYS, lessonColor, lessonTime, filterBySubgroup, getLessonProgress, isLessonNow } from '../lib/format.js'
 import { t, getLang } from '../lib/i18n.js'
 
 export function HomeScreen() {
@@ -22,7 +23,6 @@ export function HomeScreen() {
           </div>
         ) : (
           <div className="empty-state">
-            <div className="empty-art">📚</div>
             <p>{t('selectGroupOrEmployee')}</p>
           </div>
         )}
@@ -34,7 +34,7 @@ export function HomeScreen() {
     return (
       <div className="screen">
         <header className="screen-header">
-          <div><h1>{s.group ? `${t('group')} ${s.group.name}` : s.employee?.shortName || t('loading')}</h1></div>
+          <div><h1>{s.group ? `${t('group')} ${s.group.name}` : s.employee?.fio || t('loading')}</h1></div>
           <button className="icon-btn" onClick={() => a.clearSchedule()}><Icon name="x" size={18} /></button>
         </header>
         <div className="boot-screen"><Loader /></div>
@@ -65,8 +65,8 @@ function ScheduleView() {
   const schedule = s.schedule
   if (!schedule) return null
 
-  const title = s.group ? `${t('group')} ${s.group.name}` : s.employee?.shortName || ''
-  const subtitle = s.employee?.faculty?.name || ''
+  const title = s.group ? `${t('group')} ${s.group.name}` : s.employee?.fio || ''
+  const subtitle = s.employee?.academicDepartment?.[0] || ''
 
   const days = schedule.schedules || {}
   const dayKeys = Object.keys(days).sort((a, b) => new Date(a) - new Date(b))
@@ -101,7 +101,7 @@ function ScheduleView() {
 
       <div className="schedule-days">
         {dayKeys.length === 0 && examLessons.length === 0 && (
-          <div className="empty-state"><div className="empty-art">📅</div><p>{t('noLessons')}</p><span>{t('noLessonsDesc')}</span></div>
+          <div className="empty-state"><p>{t('noLessons')}</p><span>{t('noLessonsDesc')}</span></div>
         )}
         {dayKeys.map((dk) => {
           const lessons = filterBySubgroup(days[dk] || [], s.subgroup)
@@ -117,7 +117,7 @@ function ScheduleView() {
                 {isT && <span className="today-badge">{t('today')}</span>}
               </div>
               <div className="day-lessons">
-                {lessons.map((l, i) => <LessonCard key={i} lesson={l} />)}
+                {lessons.map((l, i) => <LessonCard key={i} lesson={l} isToday={isT} />)}
               </div>
             </div>
           )
@@ -147,31 +147,54 @@ function ScheduleView() {
   )
 }
 
-function LessonCard({ lesson, isExam }) {
-  const color = isExam ? '#ff3b30' : lessonColor(lesson.lessonTypeAbbrev || lesson.lessonType)
+function LessonCard({ lesson, isExam, isToday }) {
+  const [, setTick] = useState(0)
+  const color = isExam ? '#8b5cf6' : lessonColor(lesson.lessonTypeAbbrev || lesson.lessonType)
   const weeks = lesson.weekNumber || []
   const weekStr = Array.isArray(weeks) && weeks.length ? `${t('lessonWeeks')}: ${weeks.join(', ')}` : ''
   const auditories = lesson.auditories || []
-  const audStr = auditories.map((a) => a.name || a).filter(Boolean).join(', ')
+  const audStr = auditories.map((a) => typeof a === 'string' ? a : a.name || '').filter(Boolean).join(', ')
   const employees = lesson.employees || []
-  const empStr = employees.map((e) => e.shortName || e).filter(Boolean).join(', ')
+  const empStr = employees.map((e) => e.fio || e.shortName || [e.lastName, e.firstName?.[0], e.middleName?.[0]].filter(Boolean).join(' ')).filter(Boolean).join(', ')
   const numSub = lesson.numSubgroup || 0
 
+  const timer = isToday ? getLessonProgress(lesson.startLessonTime, lesson.endLessonTime) : { progress: 0, isNow: false, remaining: '' }
+  const nowActive = isToday && isLessonNow(lesson.startLessonTime, lesson.endLessonTime)
+
+  useEffect(() => {
+    if (!nowActive) return
+    const iv = setInterval(() => setTick((t) => t + 1), 1000)
+    return () => clearInterval(iv)
+  }, [nowActive])
+
   return (
-    <div className={`lesson-card glass ${isExam ? 'exam' : ''}`}>
-      <div className="lesson-color" style={{ background: color }} />
+    <div className={`lesson-card glass ${isExam ? 'exam' : ''} ${nowActive ? 'is-now' : ''}`}>
+      <div className="lesson-timer-col">
+        <div className="lesson-color" style={{ background: color }} />
+        {nowActive && (
+          <div className="lesson-timer-bar" style={{ background: `${color}22` }}>
+            <div className="lesson-timer-fill" style={{ height: `${timer.progress}%`, background: color }} />
+          </div>
+        )}
+      </div>
       <div className="lesson-body">
         <div className="lesson-top">
           <span className="lesson-type" style={{ color }}>{isExam ? 'EXAM' : lesson.lessonTypeAbbrev || lesson.lessonType || '?'}</span>
           <span className="lesson-time">{lessonTime(lesson.startLessonTime, lesson.endLessonTime)}</span>
         </div>
-        <div className="lesson-name">{lesson.subject || lesson.name || '—'}</div>
+        <div className="lesson-name">{lesson.subject || lesson.name || ''}</div>
         {empStr && <div className="lesson-detail"><Icon name="user" size={12} /> {empStr}</div>}
         {audStr && <div className="lesson-detail"><Icon name="map" size={12} /> {audStr}</div>}
         <div className="lesson-footer">
           {weekStr && <span className="lesson-weeks">{weekStr}</span>}
           {numSub > 0 && <span className="lesson-subgroup">{t('subgroupShort')} {numSub}</span>}
         </div>
+        {nowActive && timer.isNow && (
+          <div className="lesson-countdown" style={{ color }}>
+            <Icon name="clock" size={12} />
+            <span>{timer.remaining}</span>
+          </div>
+        )}
       </div>
     </div>
   )

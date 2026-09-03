@@ -4,7 +4,7 @@ import {
   savedGroup, saveGroup, savedEmployee, saveEmployee,
   savedTheme, saveTheme, savedAccent, saveAccent,
   savedSubgroup, saveSubgroup, savedOnboarded, saveOnboarded,
-  applyTheme,
+  applyTheme, initThemeListener,
 } from './lib/prefs.js'
 import { initNotifications, scheduleLessonNotifications } from './lib/notifications.js'
 
@@ -96,6 +96,13 @@ export function StoreProvider({ children }) {
     dispatch({ type: 'SET_THEME', v: th })
     dispatch({ type: 'SET_ACCENT', v: ac })
     dispatch({ type: 'SET_DARK', v: dark })
+
+    initThemeListener(
+      () => state.theme,
+      () => state.accent,
+      (th) => dispatch({ type: 'SET_THEME', v: th })
+    )
+
     if (state.group) loadSchedule('group', state.group.name)
     else if (state.employee) loadSchedule('employee', state.employee.urlId)
   }, [])
@@ -143,7 +150,11 @@ export function StoreProvider({ children }) {
       dispatch({ type: 'SET_THEME', v: t })
       dispatch({ type: 'SET_DARK', v: dark })
     },
-    setAccent: (a) => { saveAccent(a); applyTheme(state.theme, a); dispatch({ type: 'SET_ACCENT', v: a }) },
+    setAccent: (a) => {
+      saveAccent(a)
+      applyTheme(state.theme, a)
+      dispatch({ type: 'SET_ACCENT', v: a })
+    },
     setSubgroup: (s) => { saveSubgroup(s); dispatch({ type: 'SET_SUBGROUP', v: s }) },
     completeOnboard: () => { saveOnboarded(); dispatch({ type: 'ONBOARDED' }) },
     enableNotifications: async () => {

@@ -66,6 +66,7 @@ const TRANSLATIONS = {
     back: 'Назад',
     update: 'Обновить',
     updateAvailable: 'Доступна новая версия',
+    skip: 'Пропустить',
   },
   en: {
     tabSchedule: 'Schedule',
@@ -132,6 +133,7 @@ const TRANSLATIONS = {
     back: 'Back',
     update: 'Update',
     updateAvailable: 'New version available',
+    skip: 'Skip',
   },
 }
 

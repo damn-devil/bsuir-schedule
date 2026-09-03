@@ -17,12 +17,12 @@ export function AuditoriesScreen() {
   const filtered = allAud.filter((x) => {
     if (!query.trim()) return true
     const q = query.toLowerCase()
-    return (x.name || '').toLowerCase().includes(q) || String(x.buildingNumber || '').includes(q)
+    return (x.name || '').toLowerCase().includes(q) || (x.buildingNumber?.name || '').toLowerCase().includes(q)
   })
 
   const grouped = {}
   filtered.forEach((x) => {
-    const b = x.buildingNumber || '?'
+    const b = x.buildingNumber?.name || '?'
     if (!grouped[b]) grouped[b] = []
     grouped[b].push(x)
   })
@@ -40,7 +40,7 @@ export function AuditoriesScreen() {
       </div>
       {loading ? <div style={{ padding: '60px', textAlign: 'center' }}><Loader /></div> : (
         <div className="auditories-list">
-          {Object.keys(grouped).sort((a, b) => Number(a) - Number(b)).map((build) => (
+          {Object.keys(grouped).sort().map((build) => (
             <div key={build}>
               <h3 className="section-title">{build}</h3>
               {grouped[build].map((x) => (

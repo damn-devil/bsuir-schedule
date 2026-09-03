@@ -20,13 +20,15 @@ export function SearchEmployeeScreen() {
     timer.current = setTimeout(() => {
       const q = query.toLowerCase().trim()
       setEmployees(s.employees.filter((e) => {
-        const name = (e.shortName || e.name || '').toLowerCase()
-        const dep = (e.department?.name || '').toLowerCase()
+        const name = (e.fio || `${e.lastName} ${e.firstName} ${e.middleName}` || '').toLowerCase()
+        const dep = (e.academicDepartment?.[0] || '').toLowerCase()
         return name.includes(q) || dep.includes(q)
       }))
       setLoading(false)
     }, 150)
   }, [query, s.employees])
+
+  const formatName = (e) => e.fio || `${e.lastName} ${e.firstName?.[0] || ''}. ${e.middleName?.[0] || ''}.`.trim()
 
   return (
     <div className="screen">
@@ -44,7 +46,10 @@ export function SearchEmployeeScreen() {
         {!loading && employees.length === 0 && query && <div className="empty-state"><p>{t('nothingFound')}</p></div>}
         {employees.map((e) => (
           <button key={e.id || e.urlId} className="search-item glass" onClick={() => a.selectEmployee(e)}>
-            <span className="search-item-main"><strong>{e.shortName || e.name}</strong>{e.department?.name && <small>{e.department.name}</small>}</span>
+            <span className="search-item-main">
+              <strong>{formatName(e)}</strong>
+              {e.academicDepartment?.[0] && <small>{e.academicDepartment[0]}</small>}
+            </span>
             <Icon name="chevron-right" size={16} />
           </button>
         ))}

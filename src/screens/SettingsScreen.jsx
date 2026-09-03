@@ -67,8 +67,8 @@ export function SettingsScreen() {
         ) : s.employee ? (
           <div className="current-group glass">
             <div>
-              <strong>{s.employee.shortName || s.employee.name}</strong>
-              {s.employee.department?.name && <small style={{ display: 'block', color: 'var(--text2)', fontSize: '13px' }}>{s.employee.department.name}</small>}
+              <strong>{s.employee.fio || `${s.employee.lastName} ${s.employee.firstName}`}</strong>
+              {s.employee.academicDepartment?.[0] && <small style={{ display: 'block', color: 'var(--text2)', fontSize: '13px' }}>{s.employee.academicDepartment[0]}</small>}
             </div>
             <button className="btn btn-danger-soft btn-sm" onClick={() => { a.clearSchedule(); a.setView('search-employee') }}>{t('change')}</button>
           </div>
