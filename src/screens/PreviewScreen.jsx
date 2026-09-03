@@ -38,7 +38,7 @@ function isLessonEndedToday(start, end) {
 
 function lessonMatchesWeek(lesson, weekNums) {
   const weeks = lesson.weekNumber || []
-  if (weeks.length === 0) return true
+  if (weeks.length === 0) return false
   return weeks.some((w) => weekNums.includes(w))
 }
 
@@ -91,6 +91,7 @@ export function PreviewScreen() {
   const [localLoading, setLocalLoading] = useState(true)
   const [localError, setLocalError] = useState(null)
   const [localAnnouncements, setLocalAnnouncements] = useState([])
+  const [selectedPreviewWeek, setSelectedPreviewWeek] = useState(null)
   const [showExamsOnly, setShowExamsOnly] = useState(false)
 
   useEffect(() => {
@@ -107,7 +108,10 @@ export function PreviewScreen() {
       .then(([sched, week]) => {
         if (cancelled) return
         setLocalSchedule(sched)
-        if (week !== null) setLocalWeek(Number(week) || 1)
+        if (week !== null) {
+          setLocalWeek(Number(week) || 1)
+          setSelectedPreviewWeek(Number(week) || 1)
+        }
         setLocalLoading(false)
         if (preview.type === 'employee') {
           api.announcementsEmployee(id).then((a) => { if (!cancelled) setLocalAnnouncements(a || []) }).catch(() => {})
@@ -178,7 +182,7 @@ export function PreviewScreen() {
   const title = preview.type === 'group' ? `${t('group')} ${preview.data.name}` : preview.data.fio || ''
   const subtitle = preview.type === 'employee' ? (preview.data.academicDepartment?.[0] || '') : ''
   const days = schedule.schedules || {}
-  const currentWeek = localWeek || 1
+  const currentWeek = selectedPreviewWeek || localWeek || 1
   const examLessons = schedule.exams || []
   const filteredDays = buildSchedule(days, s.subgroup, currentWeek)
 
@@ -208,6 +212,18 @@ export function PreviewScreen() {
             <Icon name="pin" size={16} /> {t('pinSchedule')}
           </button>
         )}
+      </div>
+
+      <div className="week-bar glass">
+        <div className="week-info">
+          <Icon name="calendar" size={16} />
+          <span>{t('week')} <strong>{currentWeek}</strong> {t('weekOf')} 4</span>
+        </div>
+        <div className="week-dots">
+          {[1, 2, 3, 4].map((w) => (
+            <button key={w} className={`week-dot ${w === currentWeek ? 'active' : ''}`} onClick={() => setSelectedPreviewWeek(w)} />
+          ))}
+        </div>
       </div>
 
       {preview.type === 'group' && (

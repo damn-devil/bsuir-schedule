@@ -42,7 +42,7 @@ function isLessonEndedToday(start, end) {
 
 function lessonMatchesWeek(lesson, weekNums) {
   const weeks = lesson.weekNumber || []
-  if (weeks.length === 0) return true
+  if (weeks.length === 0) return false
   return weeks.some((w) => weekNums.includes(w))
 }
 
@@ -147,7 +147,7 @@ function ScheduleView() {
   const title = pinned.type === 'group' ? `${t('group')} ${pinned.data.name}` : pinned.data.fio || ''
   const subtitle = pinned.type === 'employee' ? (pinned.data.academicDepartment?.[0] || '') : ''
   const days = schedule.schedules || {}
-  const currentWeek = s.pinnedWeek || 1
+  const currentWeek = s.selectedWeek || s.pinnedWeek || 1
   const examLessons = schedule.exams || []
   const filteredDays = buildSchedule(days, s.subgroup, currentWeek)
 
@@ -310,8 +310,8 @@ function BreakIndicator({ after }) {
 }
 
 function WeekBar() {
-  const { s } = useStore()
-  const week = s.pinnedWeek || 1
+  const { s, a } = useStore()
+  const week = s.selectedWeek || s.pinnedWeek || 1
   return (
     <div className="week-bar glass">
       <div className="week-info">
@@ -320,7 +320,7 @@ function WeekBar() {
       </div>
       <div className="week-dots">
         {[1, 2, 3, 4].map((w) => (
-          <span key={w} className={`week-dot ${w === week ? 'active' : ''}`} />
+          <button key={w} className={`week-dot ${w === week ? 'active' : ''}`} onClick={() => a.setSelectedWeek(w)} />
         ))}
       </div>
     </div>

@@ -167,7 +167,7 @@ input { font-family: inherit; border: none; outline: none; background: transpare
 .week-dots { display: flex; gap: 6px; }
 .week-dot {
   width: 10px; height: 10px; border-radius: 3px; background: var(--separator);
-  border: 1.5px solid var(--brutal-ink); transition: all 0.2s var(--spring);
+  border: 1.5px solid var(--brutal-ink); transition: all 0.2s var(--spring); cursor: pointer;
 }
 .week-dot.active { background: var(--accent); transform: scale(1.3); }
 

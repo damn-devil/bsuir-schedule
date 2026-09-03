@@ -16,6 +16,7 @@ const init = {
   pinnedSchedule: null,
   pinnedWeek: null,
   pinnedAnnouncements: [],
+  selectedWeek: null,
   preview: null,
   previewSchedule: null,
   previewWeek: null,
@@ -46,6 +47,7 @@ function reducer(s, a) {
     case 'SET_PREVIEW_ANNOUNCEMENTS': return { ...s, previewAnnouncements: a.v }
     case 'SET_PREVIEW': return { ...s, preview: a.v, previewSchedule: null, previewWeek: null, previewAnnouncements: [], loading: true, error: null }
     case 'SET_PINNED': return { ...s, pinned: a.v }
+    case 'SET_SELECTED_WEEK': return { ...s, selectedWeek: a.v }
     case 'SET_LOADING': return { ...s, loading: a.v }
     case 'SET_ERROR': return { ...s, error: a.v, loading: false }
     case 'VIEW': return { ...s, view: a.v }
@@ -147,7 +149,10 @@ export function StoreProvider({ children }) {
       savePinned(preview)
       dispatch({ type: 'SET_PINNED', v: preview })
       dispatch({ type: 'SET_PINNED_SCHEDULE', v: schedule })
-      if (week !== null) dispatch({ type: 'SET_PINNED_WEEK', v: week })
+      if (week !== null) {
+        dispatch({ type: 'SET_PINNED_WEEK', v: week })
+        dispatch({ type: 'SET_SELECTED_WEEK', v: week })
+      }
       dispatch({ type: 'SET_PINNED_ANNOUNCEMENTS', v: announcements || [] })
       dispatch({ type: 'VIEW', v: 'home' })
       const dayLessons = getTodayLessons(schedule)
@@ -160,7 +165,10 @@ export function StoreProvider({ children }) {
       savePinned(preview)
       dispatch({ type: 'SET_PINNED', v: preview })
       dispatch({ type: 'SET_PINNED_SCHEDULE', v: previewSchedule })
-      if (previewWeek !== null) dispatch({ type: 'SET_PINNED_WEEK', v: previewWeek })
+      if (previewWeek !== null) {
+        dispatch({ type: 'SET_PINNED_WEEK', v: previewWeek })
+        dispatch({ type: 'SET_SELECTED_WEEK', v: previewWeek })
+      }
       dispatch({ type: 'SET_PINNED_ANNOUNCEMENTS', v: previewAnnouncements || [] })
       dispatch({ type: 'CLEAR_PREVIEW' })
       dispatch({ type: 'VIEW', v: 'home' })
@@ -196,6 +204,7 @@ export function StoreProvider({ children }) {
       try { const a = await api.auditories(); dispatch({ type: 'SET_AUDITORIES', v: a || [] }) } catch { dispatch({ type: 'SET_AUDITORIES', v: [] }) }
     },
     setView: (v) => dispatch({ type: 'VIEW', v }),
+    setSelectedWeek: (w) => dispatch({ type: 'SET_SELECTED_WEEK', v: w }),
     setTheme: (t) => {
       saveTheme(t)
       const dark = applyTheme(t, state.accent)
