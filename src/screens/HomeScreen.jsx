@@ -17,18 +17,19 @@ function getTodayDayName() {
   return WEEKDAYS[d === 0 ? 6 : d - 1]
 }
 
-function getDateForDay(dayKey) {
+function getDateForDay(dayKey, weekOffset) {
   const dow = DAY_ORDER[dayKey]
   if (!dow) return null
   const today = new Date()
   const todayDow = today.getDay() || 7
-  const diff = dow - todayDow
+  let diff = dow - todayDow
+  if (weekOffset) diff += 7 * weekOffset
   const d = new Date(today)
   d.setDate(today.getDate() + diff)
   return d
 }
 
-function isLessonEnded(start, end) {
+function isLessonEndedToday(start, end) {
   if (!start || !end) return false
   const now = Date.now()
   const today = new Date()
@@ -37,38 +38,61 @@ function isLessonEnded(start, end) {
   return now >= endMs
 }
 
-function filterFutureLessons(dayKey, lessons, subgroup, currentWeek) {
+function getFilteredDays(days, subgroup, currentWeek) {
   const todayDow = getTodayDow()
-  const dayDow = DAY_ORDER[dayKey] ?? 99
-  const isPastDay = dayDow < todayDow
-  const isToday = dayDow === todayDow
+  const todayName = getTodayDayName()
+  const results = []
 
-  if (isPastDay) return []
+  Object.keys(days).forEach((dk) => {
+    const dow = DAY_ORDER[dk] ?? 99
+    const isToday = dow === todayDow
+    const isPast = dow < todayDow
 
-  let filtered = filterBySubgroup(lessons, subgroup)
+    let lessons = filterBySubgroup(days[dk] || [], subgroup)
 
-  if (currentWeek && currentWeek > 0) {
-    filtered = filtered.filter((l) => {
-      const weeks = l.weekNumber || []
-      return weeks.length === 0 || weeks.includes(currentWeek)
-    })
-  }
+    if (isToday) {
+      const weekNums = [currentWeek, currentWeek + 1].filter((w) => w >= 1 && w <= 4)
+      lessons = lessons.filter((l) => {
+        const weeks = l.weekNumber || []
+        if (weeks.length > 0 && !weeks.some((w) => weekNums.includes(w))) return false
+        if (weeks.some((w) => w === currentWeek) && isLessonEndedToday(l.startLessonTime, l.endLessonTime)) return false
+        return true
+      })
+      if (lessons.length > 0) {
+        results.push({ dk, lessons: sortLessonsByTime(lessons), isToday: true, weekOffset: 0 })
+      }
+    } else if (isPast) {
+      const weekNums = [currentWeek + 1].filter((w) => w >= 1 && w <= 4)
+      lessons = lessons.filter((l) => {
+        const weeks = l.weekNumber || []
+        return weeks.length === 0 || weeks.some((w) => weekNums.includes(w))
+      })
+      if (lessons.length > 0) {
+        results.push({ dk, lessons: sortLessonsByTime(lessons), isToday: false, weekOffset: 1 })
+      }
+    } else {
+      const weekNums = [currentWeek, currentWeek + 1].filter((w) => w >= 1 && w <= 4)
+      lessons = lessons.filter((l) => {
+        const weeks = l.weekNumber || []
+        return weeks.length === 0 || weeks.some((w) => weekNums.includes(w))
+      })
+      if (lessons.length > 0) {
+        results.push({ dk, lessons: sortLessonsByTime(lessons), isToday: false, weekOffset: 0 })
+      }
+    }
+  })
 
-  if (isToday) {
-    filtered = filtered.filter((l) => !isLessonEnded(l.startLessonTime, l.endLessonTime))
-  }
+  results.sort((a, b) => {
+    if (a.isToday && !b.isToday) return -1
+    if (!a.isToday && b.isToday) return 1
+    const aDow = DAY_ORDER[a.dk] ?? 99
+    const bDow = DAY_ORDER[b.dk] ?? 99
+    if (a.weekOffset !== b.weekOffset) return a.weekOffset - b.weekOffset
+    if (a.weekOffset === 1) return aDow - bDow
+    return aDow - bDow
+  })
 
-  return sortLessonsByTime(filtered)
-}
-
-function getSortedDayKeys(days) {
-  const todayDow = getTodayDow()
-  return Object.keys(days)
-    .filter((dk) => {
-      const dow = DAY_ORDER[dk] ?? 99
-      return dow >= todayDow
-    })
-    .sort((a, b) => (DAY_ORDER[a] ?? 99) - (DAY_ORDER[b] ?? 99))
+  return results
 }
 
 export function HomeScreen() {
@@ -135,12 +159,11 @@ function ScheduleView() {
   const subtitle = s.employee?.academicDepartment?.[0] || ''
 
   const days = schedule.schedules || {}
-  const dayKeys = getSortedDayKeys(days)
-  const todayName = getTodayDayName()
   const currentWeek = s.currentWeek || 1
+  const nextWeek = currentWeek < 4 ? currentWeek + 1 : 1
 
   const examLessons = schedule.exams || []
-
+  const filteredDays = getFilteredDays(days, s.subgroup, currentWeek)
   const [showExamsOnly, setShowExamsOnly] = useState(false)
 
   return (
@@ -178,18 +201,17 @@ function ScheduleView() {
 
       {!showExamsOnly && (
         <div className="schedule-days">
-          {dayKeys.length === 0 && (
+          {filteredDays.length === 0 && (
             <div className="empty-state"><p>{t('noLessons')}</p><span>{t('noLessonsDesc')}</span></div>
           )}
-          {dayKeys.map((dk) => {
-            const lessons = filterFutureLessons(dk, days[dk] || [], s.subgroup, currentWeek)
-            if (lessons.length === 0) return null
-            const isToday = dk.includes(todayName)
+          {filteredDays.map(({ dk, lessons, isToday, weekOffset }) => {
+            const dd = getDateForDay(dk, weekOffset)
+            const weekLabel = weekOffset === 1 ? ` (${t('nextWeek')})` : ''
             return (
-              <div key={dk} className={`day-section ${isToday ? 'today' : ''}`}>
+              <div key={`${dk}-${weekOffset}`} className={`day-section ${isToday ? 'today' : ''}`}>
                 <div className="day-header">
-                  <span className="day-name">{dk}</span>
-                  {(() => { const dd = getDateForDay(dk); return dd ? <span className="day-date">{dd.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span> : null })()}
+                  <span className="day-name">{dk}{weekLabel}</span>
+                  {dd && <span className="day-date">{dd.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span>}
                   {isToday && <span className="today-badge">{t('today')}</span>}
                 </div>
                 <div className="day-lessons">
@@ -238,8 +260,8 @@ function LessonCard({ lesson, isExam, isToday }) {
   const empStr = employees.map((e) => e.fio || e.shortName || [e.lastName, e.firstName?.[0], e.middleName?.[0]].filter(Boolean).join(' ')).filter(Boolean).join(', ')
   const numSub = lesson.numSubgroup || 0
 
-  const timer = isToday ? getLessonProgress(lesson.startLessonTime, lesson.endLessonTime) : { progress: 0, isNow: false, remaining: '' }
-  const nowActive = isToday && isLessonNow(lesson.startLessonTime, lesson.endLessonTime)
+  const timer = getLessonProgress(lesson.startLessonTime, lesson.endLessonTime)
+  const nowActive = isLessonNow(lesson.startLessonTime, lesson.endLessonTime)
 
   useEffect(() => {
     if (!nowActive) return
@@ -251,11 +273,9 @@ function LessonCard({ lesson, isExam, isToday }) {
     <div className={`lesson-card glass ${isExam ? 'exam' : ''} ${nowActive ? 'is-now' : ''}`}>
       <div className="lesson-timer-col">
         <div className="lesson-color" style={{ background: color }} />
-        {nowActive && (
-          <div className="lesson-timer-bar" style={{ background: `${color}22` }}>
-            <div className="lesson-timer-fill" style={{ height: `${timer.progress}%`, background: color }} />
-          </div>
-        )}
+        <div className="lesson-timer-track">
+          <div className="lesson-timer-fill" style={{ height: `${timer.progress}%`, background: color }} />
+        </div>
       </div>
       <div className="lesson-body">
         <div className="lesson-top">
