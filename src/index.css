@@ -186,20 +186,29 @@ input { font-family: inherit; border: none; outline: none; background: transpare
 .chip.active { background: var(--accent); color: var(--brutal-paper); }
 
 /* SCHEDULE */
-.schedule-days { display: flex; flex-direction: column; gap: 16px; }
-.day-section { animation: slidein 0.3s var(--ease); }
+.schedule-days { display: flex; flex-direction: column; gap: 24px; }
+.day-section {
+  animation: slidein 0.3s var(--ease);
+  background: var(--brutal-card);
+  border: 2px solid var(--brutal-ink);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 4px 4px 0 var(--brutal-ink);
+}
 @keyframes slidein { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.day-section.today { border-color: var(--accent); box-shadow: 4px 4px 0 var(--accent); }
 .day-section.today .day-header { color: var(--accent); }
 .day-header {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
-  font-size: 14px; font-weight: 800; color: var(--text);
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+  font-size: 15px; font-weight: 800; color: var(--text);
 }
-.day-date { color: var(--text2); font-weight: 500; font-size: 12px; }
+.day-name { font-size: 16px; }
+.day-date { color: var(--text2); font-weight: 500; font-size: 13px; }
 .today-badge {
   background: var(--accent); color: var(--brutal-paper); font-size: 11px; font-weight: 800;
   padding: 3px 10px; border-radius: 8px; margin-left: auto; border: 1.5px solid var(--brutal-ink);
 }
-.day-lessons { display: flex; flex-direction: column; gap: 8px; }
+.day-lessons { display: flex; flex-direction: column; gap: 10px; }
 
 .lesson-card {
   display: flex; overflow: hidden; border-radius: 14px;

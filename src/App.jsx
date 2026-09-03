@@ -4,6 +4,7 @@ import { HomeScreen } from './screens/HomeScreen.jsx'
 import { PreviewScreen } from './screens/PreviewScreen.jsx'
 import { SearchGroupScreen } from './screens/SearchGroupScreen.jsx'
 import { SearchEmployeeScreen } from './screens/SearchEmployeeScreen.jsx'
+import { ExamsScreen } from './screens/ExamsScreen.jsx'
 import { AuditoriesScreen } from './screens/AuditoriesScreen.jsx'
 import { FacultiesScreen } from './screens/FacultiesScreen.jsx'
 import { SettingsScreen } from './screens/SettingsScreen.jsx'
@@ -17,6 +18,7 @@ function TabBar() {
   if (s.view === 'preview') return null
   const tabs = [
     { id: 'home', icon: 'calendar', label: t('tabSchedule') },
+    { id: 'exams', icon: 'book', label: t('tabExams') },
     { id: 'search-group', icon: 'users', label: t('tabGroups') },
     { id: 'search-employee', icon: 'user', label: t('tabEmployees') },
     { id: 'settings', icon: 'settings', label: t('tabSettings') },
@@ -40,8 +42,9 @@ function AutoUpdate() {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!reloading) { reloading = true; window.location.reload() }
     })
-    navigator.serviceWorker.getRegistration().then((reg) => {
-      if (!reg) return
+    navigator.serviceWorker.register?.(`${import.meta.env.BASE_URL}sw.js`)
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.update()
       const triggerUpdate = (w) => {
         w?.addEventListener('statechange', () => {
           if (w.state === 'installed' && reg.active) {
@@ -51,7 +54,7 @@ function AutoUpdate() {
       }
       if (reg.installing) triggerUpdate(reg.installing)
       reg.addEventListener('updatefound', () => { if (reg.installing) triggerUpdate(reg.installing) })
-    })
+    }).catch(() => {})
   }, [])
   return null
 }
@@ -62,6 +65,7 @@ function AppInner() {
   let screen
   switch (s.view) {
     case 'preview': screen = <PreviewScreen />; break
+    case 'exams': screen = <ExamsScreen />; break
     case 'search-group': screen = <SearchGroupScreen />; break
     case 'search-employee': screen = <SearchEmployeeScreen />; break
     case 'auditories': screen = <AuditoriesScreen />; break
