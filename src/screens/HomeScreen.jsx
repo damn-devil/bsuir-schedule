@@ -55,9 +55,7 @@ function getLessonNumber(start) {
 
 function buildSchedule(days, subgroup, currentWeek) {
   const todayDow = getTodayDow()
-  const nextWeek = currentWeek < 4 ? currentWeek + 1 : 1
   const thisWeekNums = [currentWeek]
-  const nextWeekNums = [nextWeek]
 
   const thisWeek = []
   const nextWeekDays = []
@@ -78,7 +76,7 @@ function buildSchedule(days, subgroup, currentWeek) {
       lessons = lessons.filter((l) => lessonMatchesWeek(l, thisWeekNums))
       if (lessons.length > 0) thisWeek.push({ dk, lessons: sortLessonsByTime(lessons), isToday: false, weekOffset: 0 })
     } else {
-      lessons = lessons.filter((l) => lessonMatchesWeek(l, nextWeekNums))
+      lessons = lessons.filter((l) => lessonMatchesWeek(l, thisWeekNums))
       if (lessons.length > 0) nextWeekDays.push({ dk, lessons: sortLessonsByTime(lessons), isToday: false, weekOffset: 1 })
     }
   })
@@ -153,9 +151,6 @@ function ScheduleView() {
   const examLessons = schedule.exams || []
   const filteredDays = buildSchedule(days, s.subgroup, currentWeek)
 
-  const thisWeekDays = filteredDays.filter((d) => d.weekOffset === 0)
-  const nextWeekDays = filteredDays.filter((d) => d.weekOffset === 1)
-
   return (
     <div className="screen">
       <header className="screen-header">
@@ -195,7 +190,7 @@ function ScheduleView() {
             <div className="empty-state"><p>{t('noLessons')}</p><span>{t('noLessonsDesc')}</span></div>
           )}
 
-          {thisWeekDays.length > 0 && thisWeekDays.map(({ dk, lessons, isToday }) => {
+          {filteredDays.map(({ dk, lessons, isToday }) => {
             const dd = getDateForDay(dk, 0)
             return (
               <div key={dk} className={`day-section ${isToday ? 'today' : ''}`}>
@@ -210,37 +205,6 @@ function ScheduleView() {
                     return (
                       <div key={i}>
                         <LessonCard lesson={l} isToday={isToday} />
-                        {num && num < 7 && lessons[i + 1] && <BreakIndicator after={num} />}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-
-          {nextWeekDays.length > 0 && (
-            <div className="week-divider">
-              <span className="week-divider-line" />
-              <span className="week-divider-text">{t('nextWeek')}</span>
-              <span className="week-divider-line" />
-            </div>
-          )}
-
-          {nextWeekDays.map(({ dk, lessons }) => {
-            const dd = getDateForDay(dk, 1)
-            return (
-              <div key={`nw-${dk}`} className="day-section">
-                <div className="day-header">
-                  <span className="day-name">{dk}</span>
-                  {dd && <span className="day-date">{dd.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span>}
-                </div>
-                <div className="day-lessons">
-                  {lessons.map((l, i) => {
-                    const num = getLessonNumber(l.startLessonTime)
-                    return (
-                      <div key={i}>
-                        <LessonCard lesson={l} isToday={false} />
                         {num && num < 7 && lessons[i + 1] && <BreakIndicator after={num} />}
                       </div>
                     )

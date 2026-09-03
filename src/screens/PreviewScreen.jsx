@@ -51,12 +51,10 @@ function getLessonNumber(start) {
 
 function buildSchedule(days, subgroup, currentWeek) {
   const todayDow = getTodayDow()
-  const nextWeek = currentWeek < 4 ? currentWeek + 1 : 1
   const thisWeekNums = [currentWeek]
-  const nextWeekNums = [nextWeek]
 
-  const thisWeek = []
-  const nextWeekDays = []
+  const upcomingDays = []
+  const pastDays = []
 
   Object.keys(days).forEach((dk) => {
     const dow = DAY_ORDER[dk] ?? 99
@@ -69,20 +67,20 @@ function buildSchedule(days, subgroup, currentWeek) {
     if (isToday) {
       lessons = lessons.filter((l) => lessonMatchesWeek(l, thisWeekNums))
       lessons = lessons.filter((l) => !isLessonEndedToday(l.startLessonTime, l.endLessonTime))
-      if (lessons.length > 0) thisWeek.push({ dk, lessons: sortLessonsByTime(lessons), isToday: true, weekOffset: 0 })
+      if (lessons.length > 0) upcomingDays.push({ dk, lessons: sortLessonsByTime(lessons), isToday: true, weekOffset: 0 })
     } else if (isFuture) {
       lessons = lessons.filter((l) => lessonMatchesWeek(l, thisWeekNums))
-      if (lessons.length > 0) thisWeek.push({ dk, lessons: sortLessonsByTime(lessons), isToday: false, weekOffset: 0 })
+      if (lessons.length > 0) upcomingDays.push({ dk, lessons: sortLessonsByTime(lessons), isToday: false, weekOffset: 0 })
     } else {
-      lessons = lessons.filter((l) => lessonMatchesWeek(l, nextWeekNums))
-      if (lessons.length > 0) nextWeekDays.push({ dk, lessons: sortLessonsByTime(lessons), isToday: false, weekOffset: 1 })
+      lessons = lessons.filter((l) => lessonMatchesWeek(l, thisWeekNums))
+      if (lessons.length > 0) pastDays.push({ dk, lessons: sortLessonsByTime(lessons), isToday: false, weekOffset: 0 })
     }
   })
 
-  thisWeek.sort((a, b) => (DAY_ORDER[a.dk] ?? 99) - (DAY_ORDER[b.dk] ?? 99))
-  nextWeekDays.sort((a, b) => (DAY_ORDER[a.dk] ?? 99) - (DAY_ORDER[b.dk] ?? 99))
+  pastDays.sort((a, b) => (DAY_ORDER[a.dk] ?? 99) - (DAY_ORDER[b.dk] ?? 99))
+  upcomingDays.sort((a, b) => (DAY_ORDER[a.dk] ?? 99) - (DAY_ORDER[b.dk] ?? 99))
 
-  return [...thisWeek, ...nextWeekDays]
+  return [...pastDays, ...upcomingDays]
 }
 
 export function PreviewScreen() {
@@ -184,9 +182,6 @@ export function PreviewScreen() {
   const examLessons = schedule.exams || []
   const filteredDays = buildSchedule(days, s.subgroup, currentWeek)
 
-  const thisWeekDays = filteredDays.filter((d) => d.weekOffset === 0)
-  const nextWeekDays = filteredDays.filter((d) => d.weekOffset === 1)
-
   const isPinned = s.pinned &&
     ((preview.type === 'group' && s.pinned.type === 'group' && s.pinned.data.name === preview.data.name) ||
      (preview.type === 'employee' && s.pinned.type === 'employee' && s.pinned.data.urlId === preview.data.urlId))
@@ -239,7 +234,7 @@ export function PreviewScreen() {
             <div className="empty-state"><p>{t('noLessons')}</p><span>{t('noLessonsDesc')}</span></div>
           )}
 
-          {thisWeekDays.length > 0 && thisWeekDays.map(({ dk, lessons, isToday }) => {
+          {filteredDays.map(({ dk, lessons, isToday }) => {
             const dd = getDateForDay(dk, 0)
             return (
               <div key={dk} className={`day-section ${isToday ? 'today' : ''}`}>
@@ -254,37 +249,6 @@ export function PreviewScreen() {
                     return (
                       <div key={i}>
                         <LessonCard lesson={l} isToday={isToday} />
-                        {num && num < 7 && lessons[i + 1] && <BreakIndicator after={num} />}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-
-          {nextWeekDays.length > 0 && (
-            <div className="week-divider">
-              <span className="week-divider-line" />
-              <span className="week-divider-text">{t('nextWeek')}</span>
-              <span className="week-divider-line" />
-            </div>
-          )}
-
-          {nextWeekDays.map(({ dk, lessons }) => {
-            const dd = getDateForDay(dk, 1)
-            return (
-              <div key={`nw-${dk}`} className="day-section">
-                <div className="day-header">
-                  <span className="day-name">{dk}</span>
-                  {dd && <span className="day-date">{dd.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span>}
-                </div>
-                <div className="day-lessons">
-                  {lessons.map((l, i) => {
-                    const num = getLessonNumber(l.startLessonTime)
-                    return (
-                      <div key={i}>
-                        <LessonCard lesson={l} isToday={false} />
                         {num && num < 7 && lessons[i + 1] && <BreakIndicator after={num} />}
                       </div>
                     )
