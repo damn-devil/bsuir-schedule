@@ -70,6 +70,11 @@ const TRANSLATIONS = {
     update: 'Обновить',
     updateAvailable: 'Доступна новая версия',
     skip: 'Пропустить',
+    pinSchedule: 'Закрепить',
+    pinned: 'Закреплено',
+    noPinned: 'Нет закреплённого расписания',
+    findGroup: 'Найти группу',
+    preview: 'Просмотр',
   },
   en: {
     tabSchedule: 'Schedule',
@@ -140,6 +145,11 @@ const TRANSLATIONS = {
     update: 'Update',
     updateAvailable: 'New version available',
     skip: 'Skip',
+    pinSchedule: 'Pin',
+    pinned: 'Pinned',
+    noPinned: 'No pinned schedule',
+    findGroup: 'Find group',
+    preview: 'Preview',
   },
 }
 

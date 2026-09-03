@@ -56,21 +56,14 @@ export function SettingsScreen() {
 
       <div className="settings-section">
         <h3 className="section-title">{t('currentGroup')}</h3>
-        {s.group ? (
+        {s.pinned ? (
           <div className="current-group glass">
             <div>
-              <strong>{s.group.name}</strong>
-              {s.group.specialityName && <small style={{ display: 'block', color: 'var(--text2)', fontSize: '13px' }}>{s.group.specialityName}</small>}
+              <strong>{s.pinned.type === 'group' ? s.pinned.data.name : s.pinned.data.fio}</strong>
+              {s.pinned.type === 'group' && s.pinned.data.specialityName && <small style={{ display: 'block', color: 'var(--text2)', fontSize: '13px' }}>{s.pinned.data.specialityName}</small>}
+              {s.pinned.type === 'employee' && s.pinned.data.academicDepartment?.[0] && <small style={{ display: 'block', color: 'var(--text2)', fontSize: '13px' }}>{s.pinned.data.academicDepartment[0]}</small>}
             </div>
-            <button className="btn btn-danger-soft btn-sm" onClick={() => { a.clearSchedule(); a.setView('search-group') }}>{t('change')}</button>
-          </div>
-        ) : s.employee ? (
-          <div className="current-group glass">
-            <div>
-              <strong>{s.employee.fio || `${s.employee.lastName} ${s.employee.firstName}`}</strong>
-              {s.employee.academicDepartment?.[0] && <small style={{ display: 'block', color: 'var(--text2)', fontSize: '13px' }}>{s.employee.academicDepartment[0]}</small>}
-            </div>
-            <button className="btn btn-danger-soft btn-sm" onClick={() => { a.clearSchedule(); a.setView('search-employee') }}>{t('change')}</button>
+            <button className="btn btn-danger-soft btn-sm" onClick={() => { a.unpin(); a.setView('search-group') }}>{t('change')}</button>
           </div>
         ) : (
           <button className="btn btn-primary btn-block" onClick={() => a.setView('search-group')}>{t('selectGroup')}</button>

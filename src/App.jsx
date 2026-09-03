@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { StoreProvider, useStore } from './store.jsx'
-import { OnboardScreen } from './screens/OnboardScreen.jsx'
 import { HomeScreen } from './screens/HomeScreen.jsx'
+import { PreviewScreen } from './screens/PreviewScreen.jsx'
 import { SearchGroupScreen } from './screens/SearchGroupScreen.jsx'
 import { SearchEmployeeScreen } from './screens/SearchEmployeeScreen.jsx'
 import { AuditoriesScreen } from './screens/AuditoriesScreen.jsx'
@@ -14,7 +14,7 @@ import './index.css'
 
 function TabBar() {
   const { s, a } = useStore()
-  if (!s.onboarded || s.view === 'onboard') return null
+  if (s.view === 'preview') return null
   const tabs = [
     { id: 'home', icon: 'calendar', label: t('tabSchedule') },
     { id: 'search-group', icon: 'users', label: t('tabGroups') },
@@ -58,10 +58,10 @@ function AutoUpdate() {
 
 function AppInner() {
   const { s, a } = useStore()
-  if (!s.onboarded || s.view === 'onboard') return <OnboardScreen />
 
   let screen
   switch (s.view) {
+    case 'preview': screen = <PreviewScreen />; break
     case 'search-group': screen = <SearchGroupScreen />; break
     case 'search-employee': screen = <SearchEmployeeScreen />; break
     case 'auditories': screen = <AuditoriesScreen />; break

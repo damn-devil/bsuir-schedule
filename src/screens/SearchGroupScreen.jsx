@@ -39,7 +39,7 @@ export function SearchGroupScreen() {
         {loading && groups.length === 0 && <div style={{ padding: '40px', textAlign: 'center' }}><Loader /></div>}
         {!loading && groups.length === 0 && query && <div className="empty-state"><p>{t('nothingFound')}</p></div>}
         {groups.map((g) => (
-          <button key={g.id || g.name} className="search-item glass" onClick={() => a.selectGroup(g)}>
+          <button key={g.id || g.name} className="search-item glass" onClick={() => a.previewGroup(g)}>
             <span className="search-item-main"><strong>{g.name}</strong>{g.specialityName && <small>{g.specialityName}</small>}</span>
             <Icon name="chevron-right" size={16} />
           </button>

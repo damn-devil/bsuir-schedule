@@ -16,6 +16,8 @@ export const savedOnboarded = () => g('onb', false)
 export const saveOnboarded = () => sv('onb', true)
 export const savedLang = () => g('lang', 'ru')
 export const saveLang = (v) => sv('lang', v)
+export const savedPinned = () => g('pin', null)
+export const savePinned = (v) => sv('pin', v)
 
 const THEMES = {
   light: {

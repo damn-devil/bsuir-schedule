@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../store.jsx'
+import { api } from '../api.js'
 import { Icon } from '../components/Icon.jsx'
 import { Loader } from '../components/Loader.jsx'
 import { WEEKDAYS, lessonColor, lessonTime, filterBySubgroup, sortLessonsByTime, getLessonProgress, isLessonNow, LESSON_SLOTS, BREAK_TIMES } from '../lib/format.js'
@@ -10,11 +11,6 @@ const DAY_ORDER = { 'Понедельник': 1, 'Вторник': 2, 'Сред�
 function getTodayDow() {
   const d = new Date().getDay()
   return d === 0 ? 7 : d
-}
-
-function getTodayDayName() {
-  const d = new Date().getDay()
-  return WEEKDAYS[d === 0 ? 6 : d - 1]
 }
 
 function getDateForDay(dayKey, weekOffset) {
@@ -89,72 +85,111 @@ function buildSchedule(days, subgroup, currentWeek) {
   return [...thisWeek, ...nextWeekDays]
 }
 
-export function HomeScreen() {
+export function PreviewScreen() {
   const { s, a } = useStore()
-  const pinned = s.pinned
+  const preview = s.preview
+  const [localSchedule, setLocalSchedule] = useState(null)
+  const [localWeek, setLocalWeek] = useState(null)
+  const [localLoading, setLocalLoading] = useState(true)
+  const [localError, setLocalError] = useState(null)
+  const [localAnnouncements, setLocalAnnouncements] = useState([])
+  const [showExamsOnly, setShowExamsOnly] = useState(false)
 
-  if (!pinned) {
+  useEffect(() => {
+    if (!preview) return
+    let cancelled = false
+    setLocalLoading(true)
+    setLocalError(null)
+    setLocalSchedule(null)
+
+    const id = preview.type === 'group' ? preview.data.name : preview.data.urlId
+    const fetcher = preview.type === 'group' ? api.scheduleGroup(id) : api.scheduleEmployee(id)
+
+    Promise.all([fetcher, api.currentWeek().catch(() => null)])
+      .then(([sched, week]) => {
+        if (cancelled) return
+        setLocalSchedule(sched)
+        if (week !== null) setLocalWeek(Number(week) || 1)
+        setLocalLoading(false)
+        if (preview.type === 'employee') {
+          api.announcementsEmployee(id).then((a) => { if (!cancelled) setLocalAnnouncements(a || []) }).catch(() => {})
+        }
+      })
+      .catch((e) => {
+        if (cancelled) return
+        setLocalError(e.message || 'Ошибка загрузки')
+        setLocalLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [preview?.type, preview?.data?.name, preview?.data?.urlId])
+
+  if (!preview) {
     return (
       <div className="screen">
         <header className="screen-header">
-          <div><h1>{t('tabSchedule')}</h1></div>
+          <div><h1>{t('preview')}</h1></div>
+          <button className="icon-btn" onClick={() => a.setView('search-group')}><Icon name="arrow-left" size={18} /></button>
         </header>
-        <div className="empty-state">
-          <p>{t('noPinned')}</p>
-          <button className="btn btn-primary" onClick={() => a.setView('search-group')}>
-            <Icon name="search" size={16} /> {t('findGroup')}
-          </button>
-        </div>
+        <div className="empty-state"><p>{t('nothingFound')}</p></div>
       </div>
     )
   }
 
-  if (s.loading && !s.pinnedSchedule) {
+  if (localLoading) {
     return (
       <div className="screen">
         <header className="screen-header">
-          <div><h1>{pinned.type === 'group' ? `${t('group')} ${pinned.data.name}` : pinned.data.fio || t('loading')}</h1></div>
-          <button className="icon-btn" onClick={() => a.unpin()}><Icon name="x" size={18} /></button>
+          <div>
+            <h1>{preview.type === 'group' ? `${t('group')} ${preview.data.name}` : preview.data.fio || t('loading')}</h1>
+            {preview.type === 'employee' && preview.data.academicDepartment?.[0] && (
+              <p className="screen-sub">{preview.data.academicDepartment[0]}</p>
+            )}
+          </div>
+          <button className="icon-btn" onClick={() => a.setView('search-group')}><Icon name="arrow-left" size={18} /></button>
         </header>
         <div className="boot-screen"><Loader /></div>
       </div>
     )
   }
 
-  if (s.error) {
+  if (localError) {
     return (
       <div className="screen">
         <header className="screen-header">
           <div><h1>{t('error')}</h1></div>
-          <button className="icon-btn" onClick={() => a.unpin()}><Icon name="x" size={18} /></button>
+          <button className="icon-btn" onClick={() => a.setView('search-group')}><Icon name="arrow-left" size={18} /></button>
         </header>
         <div className="error-card glass">
-          <p>{s.error}</p>
-          <button className="btn btn-primary" onClick={() => a.refresh()}>{t('retry')}</button>
+          <p>{localError}</p>
+          <button className="btn btn-primary" onClick={() => {
+            setLocalLoading(true)
+            setLocalError(null)
+            const id = preview.type === 'group' ? preview.data.name : preview.data.urlId
+            const fetcher = preview.type === 'group' ? api.scheduleGroup(id) : api.scheduleEmployee(id)
+            fetcher.then((sched) => { setLocalSchedule(sched); setLocalLoading(false) }).catch((e) => { setLocalError(e.message); setLocalLoading(false) })
+          }}>{t('retry')}</button>
         </div>
       </div>
     )
   }
 
-  return <ScheduleView />
-}
+  const schedule = localSchedule
+  if (!schedule) return null
 
-function ScheduleView() {
-  const { s, a } = useStore()
-  const [showExamsOnly, setShowExamsOnly] = useState(false)
-  const schedule = s.pinnedSchedule
-  const pinned = s.pinned
-  if (!schedule || !pinned) return null
-
-  const title = pinned.type === 'group' ? `${t('group')} ${pinned.data.name}` : pinned.data.fio || ''
-  const subtitle = pinned.type === 'employee' ? (pinned.data.academicDepartment?.[0] || '') : ''
+  const title = preview.type === 'group' ? `${t('group')} ${preview.data.name}` : preview.data.fio || ''
+  const subtitle = preview.type === 'employee' ? (preview.data.academicDepartment?.[0] || '') : ''
   const days = schedule.schedules || {}
-  const currentWeek = s.pinnedWeek || 1
+  const currentWeek = localWeek || 1
   const examLessons = schedule.exams || []
   const filteredDays = buildSchedule(days, s.subgroup, currentWeek)
 
   const thisWeekDays = filteredDays.filter((d) => d.weekOffset === 0)
   const nextWeekDays = filteredDays.filter((d) => d.weekOffset === 1)
+
+  const isPinned = s.pinned &&
+    ((preview.type === 'group' && s.pinned.type === 'group' && s.pinned.data.name === preview.data.name) ||
+     (preview.type === 'employee' && s.pinned.type === 'employee' && s.pinned.data.urlId === preview.data.urlId))
 
   return (
     <div className="screen">
@@ -163,15 +198,24 @@ function ScheduleView() {
           <h1 style={{ fontSize: '28px' }}>{title}</h1>
           {subtitle && <p className="screen-sub">{subtitle}</p>}
         </div>
-        <div className="header-actions">
-          <button className="icon-btn" onClick={() => a.refresh()} title={t('refresh')}><Icon name="refresh" size={18} /></button>
-          <button className="icon-btn" onClick={() => a.unpin()} title={t('close')}><Icon name="x" size={18} /></button>
-        </div>
+        <button className="icon-btn" onClick={() => a.setView('search-group')}><Icon name="arrow-left" size={18} /></button>
       </header>
 
-      <WeekBar />
+      <div className="preview-bar">
+        {isPinned ? (
+          <button className="btn btn-primary" disabled>
+            <Icon name="check" size={16} /> {t('pinned')}
+          </button>
+        ) : (
+          <button className="btn btn-primary" onClick={() => {
+            a.pinPreviewTo(localSchedule, localWeek, preview, localAnnouncements)
+          }}>
+            <Icon name="pin" size={16} /> {t('pinSchedule')}
+          </button>
+        )}
+      </div>
 
-      {pinned.type === 'group' && (
+      {preview.type === 'group' && (
         <div className="subgroup-bar">
           <span className="subgroup-label">{t('subgroup')}:</span>
           {[0, 1, 2].map((n) => (
@@ -262,10 +306,10 @@ function ScheduleView() {
         </div>
       )}
 
-      {pinned.type === 'employee' && s.pinnedAnnouncements?.length > 0 && (
+      {preview.type === 'employee' && localAnnouncements?.length > 0 && (
         <div className="announcements-section">
           <h3 className="section-title">{t('announcements')}</h3>
-          {s.pinnedAnnouncements.map((an, i) => (
+          {localAnnouncements.map((an, i) => (
             <div key={i} className="announcement-card glass">
               <div className="ann-title">{an.title || ''}</div>
               <div className="ann-date">{an.date ? new Date(an.date).toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU') : ''}</div>
@@ -341,24 +385,6 @@ function BreakIndicator({ after }) {
       <span className="break-line" />
       <span className="break-text">{brk.minutes} {t('breakMin')}</span>
       <span className="break-line" />
-    </div>
-  )
-}
-
-function WeekBar() {
-  const { s } = useStore()
-  const week = s.pinnedWeek || 1
-  return (
-    <div className="week-bar glass">
-      <div className="week-info">
-        <Icon name="calendar" size={16} />
-        <span>{t('week')} <strong>{week}</strong> {t('weekOf')} 4</span>
-      </div>
-      <div className="week-dots">
-        {[1, 2, 3, 4].map((w) => (
-          <span key={w} className={`week-dot ${w === week ? 'active' : ''}`} />
-        ))}
-      </div>
     </div>
   )
 }

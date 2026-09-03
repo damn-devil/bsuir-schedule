@@ -173,6 +173,7 @@ input { font-family: inherit; border: none; outline: none; background: transpare
 
 /* SUBGROUP */
 .subgroup-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.preview-bar { display: flex; gap: 10px; margin-bottom: 16px; }
 .subgroup-label { font-size: 13px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .chip {
   padding: 8px 16px; border-radius: 10px; background: var(--brutal-btn-bg);
@@ -228,6 +229,10 @@ input { font-family: inherit; border: none; outline: none; background: transpare
 .break-indicator { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
 .break-line { flex: 1; height: 1px; background: var(--separator); }
 .break-text { font-size: 10px; color: var(--text2); font-weight: 700; white-space: nowrap; }
+
+.week-divider { display: flex; align-items: center; gap: 10px; padding: 16px 0 8px; }
+.week-divider-line { flex: 1; height: 2px; background: var(--brutal-ink); }
+.week-divider-text { font-size: 12px; font-weight: 800; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; }
 
 .lesson-card.exam { border: 2px solid #8b5cf6; }
 .lesson-card.exam .lesson-color { background: #8b5cf6 !important; }

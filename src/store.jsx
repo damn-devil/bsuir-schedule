@@ -4,6 +4,7 @@ import {
   savedGroup, saveGroup, savedEmployee, saveEmployee,
   savedTheme, saveTheme, savedAccent, saveAccent,
   savedSubgroup, saveSubgroup, savedOnboarded, saveOnboarded,
+  savedPinned, savePinned,
   applyTheme, initThemeListener,
 } from './lib/prefs.js'
 import { initNotifications, scheduleLessonNotifications } from './lib/notifications.js'
@@ -11,38 +12,40 @@ import { initNotifications, scheduleLessonNotifications } from './lib/notificati
 const Ctx = createContext(null)
 
 const init = {
-  group: savedGroup(),
-  employee: savedEmployee(),
-  schedule: null,
-  currentWeek: null,
+  pinned: savedPinned(),
+  pinnedSchedule: null,
+  pinnedWeek: null,
+  pinnedAnnouncements: [],
+  preview: null,
+  previewSchedule: null,
+  previewWeek: null,
+  previewAnnouncements: [],
   groups: [],
   employees: [],
   faculties: [],
   auditories: [],
-  announcements: [],
   loading: false,
   error: null,
   toast: null,
-  view: savedGroup() || savedEmployee() ? 'home' : 'onboard',
+  view: savedPinned() ? 'home' : 'search-group',
   isDark: false,
   theme: savedTheme(),
   accent: savedAccent(),
   subgroup: savedSubgroup(),
-  onboarded: savedOnboarded(),
+  onboarded: true,
   notifEnabled: false,
 }
 
 function reducer(s, a) {
   switch (a.type) {
-    case 'SET_SCHEDULE': return { ...s, schedule: a.v, loading: false, error: null }
-    case 'SET_WEEK': return { ...s, currentWeek: a.v }
-    case 'SET_GROUPS': return { ...s, groups: a.v }
-    case 'SET_EMPLOYEES': return { ...s, employees: a.v }
-    case 'SET_FACULTIES': return { ...s, faculties: a.v }
-    case 'SET_AUDITORIES': return { ...s, auditories: a.v }
-    case 'SET_ANNOUNCEMENTS': return { ...s, announcements: a.v }
-    case 'SET_GROUP': return { ...s, group: a.v, employee: null, mode: 'group', loading: true, error: null }
-    case 'SET_EMPLOYEE': return { ...s, employee: a.v, group: null, mode: 'employee', loading: true, error: null }
+    case 'SET_PINNED_SCHEDULE': return { ...s, pinnedSchedule: a.v, loading: false, error: null }
+    case 'SET_PINNED_WEEK': return { ...s, pinnedWeek: a.v }
+    case 'SET_PINNED_ANNOUNCEMENTS': return { ...s, pinnedAnnouncements: a.v }
+    case 'SET_PREVIEW_SCHEDULE': return { ...s, previewSchedule: a.v, loading: false, error: null }
+    case 'SET_PREVIEW_WEEK': return { ...s, previewWeek: a.v }
+    case 'SET_PREVIEW_ANNOUNCEMENTS': return { ...s, previewAnnouncements: a.v }
+    case 'SET_PREVIEW': return { ...s, preview: a.v, previewSchedule: null, previewWeek: null, previewAnnouncements: [], loading: true, error: null }
+    case 'SET_PINNED': return { ...s, pinned: a.v }
     case 'SET_LOADING': return { ...s, loading: a.v }
     case 'SET_ERROR': return { ...s, error: a.v, loading: false }
     case 'VIEW': return { ...s, view: a.v }
@@ -53,7 +56,11 @@ function reducer(s, a) {
     case 'SET_SUBGROUP': return { ...s, subgroup: a.v }
     case 'ONBOARDED': return { ...s, onboarded: true, view: 'home' }
     case 'SET_NOTIF': return { ...s, notifEnabled: a.v }
-    case 'CLEAR_SCHEDULE': return { ...s, schedule: null, group: null, employee: null, announcements: [] }
+    case 'SET_GROUPS': return { ...s, groups: a.v }
+    case 'SET_EMPLOYEES': return { ...s, employees: a.v }
+    case 'SET_FACULTIES': return { ...s, faculties: a.v }
+    case 'SET_AUDITORIES': return { ...s, auditories: a.v }
+    case 'CLEAR_PREVIEW': return { ...s, preview: null, previewSchedule: null, previewAnnouncements: [] }
     default: return s
   }
 }
@@ -65,26 +72,42 @@ function toast(d, msg, type = 'info') {
   tt = setTimeout(() => d({ type: 'TOAST', toast: null }), 3500)
 }
 
+function getTodayLessons(schedule) {
+  if (!schedule?.schedules) return []
+  const now = new Date()
+  const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
+  const todayName = days[now.getDay()]
+  for (const [key, lessons] of Object.entries(schedule.schedules)) {
+    if (key.includes(todayName) || new Date(key).toDateString() === now.toDateString()) {
+      return Array.isArray(lessons) ? lessons : []
+    }
+  }
+  return []
+}
+
 export function StoreProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, init)
 
-  const loadSchedule = useCallback(async (mode, id) => {
-    if (!mode || !id) return
+  const loadSchedule = useCallback(async (type, data, setSchedule, setWeek, setAnnouncements) => {
+    if (!type || !data) return
     dispatch({ type: 'SET_LOADING', v: true })
     try {
+      const id = type === 'group' ? data.name : data.urlId
       const [sched, week] = await Promise.all([
-        mode === 'group' ? api.scheduleGroup(id) : api.scheduleEmployee(id),
+        type === 'group' ? api.scheduleGroup(id) : api.scheduleEmployee(id),
         api.currentWeek().catch(() => null),
       ])
-      dispatch({ type: 'SET_SCHEDULE', v: sched })
-      if (week !== null) dispatch({ type: 'SET_WEEK', v: Number(week) || 1 })
-      if (mode === 'employee') {
-        api.announcementsEmployee(id).then((a) => dispatch({ type: 'SET_ANNOUNCEMENTS', v: a || [] })).catch(() => {})
+      dispatch({ type: setSchedule, v: sched })
+      if (week !== null) dispatch({ type: setWeek, v: Number(week) || 1 })
+      if (type === 'employee') {
+        api.announcementsEmployee(id).then((a) => dispatch({ type: setAnnouncements, v: a || [] })).catch(() => {})
       } else {
-        dispatch({ type: 'SET_ANNOUNCEMENTS', v: [] })
+        dispatch({ type: setAnnouncements, v: [] })
       }
-      const dayLessons = getTodayLessons(sched)
-      scheduleLessonNotifications(dayLessons)
+      if (setSchedule === 'SET_PINNED_SCHEDULE') {
+        const dayLessons = getTodayLessons(sched)
+        scheduleLessonNotifications(dayLessons)
+      }
     } catch (e) {
       dispatch({ type: 'SET_ERROR', v: e.message || 'Ошибка загрузки' })
     }
@@ -103,33 +126,62 @@ export function StoreProvider({ children }) {
       (th) => dispatch({ type: 'SET_THEME', v: th })
     )
 
-    if (state.group) loadSchedule('group', state.group.name)
-    else if (state.employee) loadSchedule('employee', state.employee.urlId)
+    const p = savedPinned()
+    if (p) {
+      dispatch({ type: 'SET_PINNED', v: p })
+      loadSchedule(p.type, p.data, 'SET_PINNED_SCHEDULE', 'SET_PINNED_WEEK', 'SET_PINNED_ANNOUNCEMENTS')
+    }
   }, [])
 
   const act = {
-    selectGroup: async (g) => {
-      saveGroup(g); saveEmployee(null)
-      dispatch({ type: 'SET_GROUP', v: g })
-      await loadSchedule('group', g.name)
+    previewGroup: (g) => {
+      dispatch({ type: 'SET_PREVIEW', v: { type: 'group', data: g } })
+      dispatch({ type: 'VIEW', v: 'preview' })
+    },
+    previewEmployee: (e) => {
+      dispatch({ type: 'SET_PREVIEW', v: { type: 'employee', data: e } })
+      dispatch({ type: 'VIEW', v: 'preview' })
+    },
+    pinPreviewTo: (schedule, week, preview, announcements) => {
+      if (!preview || !schedule) return
+      savePinned(preview)
+      dispatch({ type: 'SET_PINNED', v: preview })
+      dispatch({ type: 'SET_PINNED_SCHEDULE', v: schedule })
+      if (week !== null) dispatch({ type: 'SET_PINNED_WEEK', v: week })
+      dispatch({ type: 'SET_PINNED_ANNOUNCEMENTS', v: announcements || [] })
       dispatch({ type: 'VIEW', v: 'home' })
+      const dayLessons = getTodayLessons(schedule)
+      scheduleLessonNotifications(dayLessons)
+      toast(dispatch, 'Расписание закреплено', 'success')
     },
-    selectEmployee: async (e) => {
-      saveEmployee(e); saveGroup(null)
-      dispatch({ type: 'SET_EMPLOYEE', v: e })
-      await loadSchedule('employee', e.urlId)
+    pinPreview: () => {
+      const { preview, previewSchedule, previewWeek, previewAnnouncements } = state
+      if (!preview || !previewSchedule) return
+      savePinned(preview)
+      dispatch({ type: 'SET_PINNED', v: preview })
+      dispatch({ type: 'SET_PINNED_SCHEDULE', v: previewSchedule })
+      if (previewWeek !== null) dispatch({ type: 'SET_PINNED_WEEK', v: previewWeek })
+      dispatch({ type: 'SET_PINNED_ANNOUNCEMENTS', v: previewAnnouncements || [] })
+      dispatch({ type: 'CLEAR_PREVIEW' })
       dispatch({ type: 'VIEW', v: 'home' })
+      const dayLessons = getTodayLessons(previewSchedule)
+      scheduleLessonNotifications(dayLessons)
+      toast(dispatch, 'Расписание закреплено', 'success')
     },
-    clearSchedule: () => {
-      saveGroup(null); saveEmployee(null)
-      dispatch({ type: 'CLEAR_SCHEDULE' })
+    unpin: () => {
+      savePinned(null)
+      dispatch({ type: 'SET_PINNED', v: null })
+      dispatch({ type: 'SET_PINNED_SCHEDULE', v: null })
+      dispatch({ type: 'SET_PINNED_WEEK', v: null })
+      dispatch({ type: 'SET_PINNED_ANNOUNCEMENTS', v: [] })
     },
+    clearPreview: () => dispatch({ type: 'CLEAR_PREVIEW' }),
     refresh: async () => {
-      if (state.group) await loadSchedule('group', state.group.name)
-      else if (state.employee) await loadSchedule('employee', state.employee.urlId)
+      const p = state.pinned
+      if (p) await loadSchedule(p.type, p.data, 'SET_PINNED_SCHEDULE', 'SET_PINNED_WEEK', 'SET_PINNED_ANNOUNCEMENTS')
     },
     refreshWeek: async () => {
-      try { const w = await api.currentWeek(); dispatch({ type: 'SET_WEEK', v: Number(w) || 1 }) } catch {}
+      try { const w = await api.currentWeek(); dispatch({ type: 'SET_PINNED_WEEK', v: Number(w) || 1 }) } catch {}
     },
     loadGroups: async () => {
       try { const g = await api.groups(); dispatch({ type: 'SET_GROUPS', v: g || [] }) } catch { dispatch({ type: 'SET_GROUPS', v: [] }) }
@@ -168,19 +220,6 @@ export function StoreProvider({ children }) {
   }
 
   return <Ctx.Provider value={{ s: state, a: act }}>{children}</Ctx.Provider>
-}
-
-function getTodayLessons(schedule) {
-  if (!schedule?.schedules) return []
-  const now = new Date()
-  const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
-  const todayName = days[now.getDay()]
-  for (const [key, lessons] of Object.entries(schedule.schedules)) {
-    if (key.includes(todayName) || new Date(key).toDateString() === now.toDateString()) {
-      return Array.isArray(lessons) ? lessons : []
-    }
-  }
-  return []
 }
 
 export function useStore() { return useContext(Ctx) }
