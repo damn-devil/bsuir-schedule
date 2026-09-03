@@ -33,27 +33,27 @@ function TabBar() {
   )
 }
 
-function UpdateBanner() {
-  const [show, setShow] = useState(false)
+function AutoUpdate() {
   useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration().then((reg) => {
-        if (!reg) return
-        const check = (w) => w?.addEventListener('statechange', () => {
-          if (w.state === 'installed' && reg.active) setShow(true)
+    if (!('serviceWorker' in navigator)) return
+    let reloading = false
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!reloading) { reloading = true; window.location.reload() }
+    })
+    navigator.serviceWorker.getRegistration().then((reg) => {
+      if (!reg) return
+      const triggerUpdate = (w) => {
+        w?.addEventListener('statechange', () => {
+          if (w.state === 'installed' && reg.active) {
+            w.postMessage('SKIP_WAITING')
+          }
         })
-        if (reg.installing) check(reg.installing)
-        reg.addEventListener('updatefound', () => { if (reg.installing) check(reg.installing) })
-      })
-    }
+      }
+      if (reg.installing) triggerUpdate(reg.installing)
+      reg.addEventListener('updatefound', () => { if (reg.installing) triggerUpdate(reg.installing) })
+    })
   }, [])
-  if (!show) return null
-  return (
-    <div className="update-banner" role="status">
-      <span>{t('updateAvailable')}</span>
-      <button className="btn btn-primary btn-sm" onClick={() => window.location.reload()}>{t('update')}</button>
-    </div>
-  )
+  return null
 }
 
 function AppInner() {
@@ -72,9 +72,9 @@ function AppInner() {
 
   return (
     <div className={`app${s.isDark ? ' is-dark' : ''}`}>
+      <AutoUpdate />
       <div className="screen-view" key={s.view}>{screen}</div>
       <TabBar />
-      <UpdateBanner />
       <Toast />
     </div>
   )
