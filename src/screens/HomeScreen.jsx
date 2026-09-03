@@ -32,12 +32,18 @@ function buildSchedule(days, subgroup, currentWeek) {
   today.setHours(0, 0, 0, 0)
   const result = []
 
+  const bsuirDay = (today.getDay() + 6) % 7
+  const mondayOfThisWeek = new Date(today)
+  mondayOfThisWeek.setDate(today.getDate() - bsuirDay)
+
   for (let i = 0; i < 28; i++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() + i)
+    const d = new Date(mondayOfThisWeek)
+    d.setDate(mondayOfThisWeek.getDate() + i)
+    if (d < today) continue
     const dayName = getDayName(d)
-    const weeksFromToday = Math.floor(i / 7)
-    const weekNum = ((currentWeek - 1 + weeksFromToday) % 4) + 1
+    const daysFromMonday = Math.floor((d - mondayOfThisWeek) / 86400000)
+    const weeksFromMonday = Math.floor(daysFromMonday / 7)
+    const weekNum = ((currentWeek - 1 + weeksFromMonday) % 4) + 1
     const isToday = sameDay(d, today)
 
     let lessons = filterBySubgroup(days[dayName] || [], subgroup)
