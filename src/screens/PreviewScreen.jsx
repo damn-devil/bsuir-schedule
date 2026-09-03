@@ -6,34 +6,13 @@ import { Loader } from '../components/Loader.jsx'
 import { WEEKDAYS, lessonColor, lessonTime, filterBySubgroup, sortLessonsByTime, getLessonProgress, isLessonNow, LESSON_SLOTS, BREAK_TIMES } from '../lib/format.js'
 import { t, getLang } from '../lib/i18n.js'
 
-const DAY_ORDER = { 'Понедельник': 1, 'Вторник': 2, 'Среда': 3, 'Четверг': 4, 'Пятница': 5, 'Суббота': 6, 'Воскресенье': 0 }
-
-function getTodayDow() {
-  const d = new Date().getDay()
-  return d === 0 ? 7 : d
+function getDayName(date) {
+  const d = date.getDay()
+  return WEEKDAYS[d === 0 ? 6 : d - 1]
 }
 
-function getDateForDay(dayKey, weekOffset) {
-  const dow = DAY_ORDER[dayKey]
-  if (!dow) return null
-  const today = new Date()
-  const todayDow = today.getDay() || 7
-  let diff = dow - todayDow
-  if (weekOffset) diff += 7 * weekOffset
-  const d = new Date(today)
-  d.setDate(today.getDate() + diff)
-  return d
-}
-
-function timeToMs(time) {
-  const [h, m] = time.split(':').map(Number)
-  const d = new Date()
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m, 0, 0).getTime()
-}
-
-function isLessonEndedToday(start, end) {
-  if (!start || !end) return false
-  return Date.now() >= timeToMs(end)
+function sameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
 function lessonMatchesWeek(lesson, weekNums) {
@@ -50,37 +29,26 @@ function getLessonNumber(start) {
 }
 
 function buildSchedule(days, subgroup, currentWeek) {
-  const todayDow = getTodayDow()
-  const thisWeekNums = [currentWeek]
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const result = []
 
-  const upcomingDays = []
-  const pastDays = []
+  for (let i = 0; i < 28; i++) {
+    const d = new Date(today)
+    d.setDate(today.getDate() + i)
+    const dayName = getDayName(d)
+    const weeksFromToday = Math.floor(i / 7)
+    const weekNum = ((currentWeek - 1 + weeksFromToday) % 4) + 1
+    const isToday = sameDay(d, today)
 
-  Object.keys(days).forEach((dk) => {
-    const dow = DAY_ORDER[dk] ?? 99
-    const isToday = dow === todayDow
-    const isPast = dow < todayDow
-    const isFuture = dow > todayDow
-
-    let lessons = filterBySubgroup(days[dk] || [], subgroup)
-
-    if (isToday) {
-      lessons = lessons.filter((l) => lessonMatchesWeek(l, thisWeekNums))
-      lessons = lessons.filter((l) => !isLessonEndedToday(l.startLessonTime, l.endLessonTime))
-      if (lessons.length > 0) upcomingDays.push({ dk, lessons: sortLessonsByTime(lessons), isToday: true, weekOffset: 0 })
-    } else if (isFuture) {
-      lessons = lessons.filter((l) => lessonMatchesWeek(l, thisWeekNums))
-      if (lessons.length > 0) upcomingDays.push({ dk, lessons: sortLessonsByTime(lessons), isToday: false, weekOffset: 0 })
-    } else {
-      lessons = lessons.filter((l) => lessonMatchesWeek(l, thisWeekNums))
-      if (lessons.length > 0) pastDays.push({ dk, lessons: sortLessonsByTime(lessons), isToday: false, weekOffset: 0 })
+    let lessons = filterBySubgroup(days[dayName] || [], subgroup)
+    lessons = lessons.filter((l) => lessonMatchesWeek(l, [weekNum]))
+    if (lessons.length > 0) {
+      result.push({ date: d, dk: dayName, lessons: sortLessonsByTime(lessons), isToday, weekNum })
     }
-  })
+  }
 
-  pastDays.sort((a, b) => (DAY_ORDER[a.dk] ?? 99) - (DAY_ORDER[b.dk] ?? 99))
-  upcomingDays.sort((a, b) => (DAY_ORDER[a.dk] ?? 99) - (DAY_ORDER[b.dk] ?? 99))
-
-  return [...pastDays, ...upcomingDays]
+  return result
 }
 
 export function PreviewScreen() {
@@ -250,13 +218,13 @@ export function PreviewScreen() {
             <div className="empty-state"><p>{t('noLessons')}</p><span>{t('noLessonsDesc')}</span></div>
           )}
 
-          {filteredDays.map(({ dk, lessons, isToday }) => {
-            const dd = getDateForDay(dk, 0)
+          {filteredDays.map(({ date, dk, lessons, isToday, weekNum }) => {
             return (
-              <div key={dk} className={`day-section ${isToday ? 'today' : ''}`}>
+              <div key={date.toISOString()} className={`day-section ${isToday ? 'today' : ''}`}>
                 <div className="day-header">
                   <span className="day-name">{dk}</span>
-                  {dd && <span className="day-date">{dd.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span>}
+                  <span className="day-date">{date.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span>
+                  <span className="day-week-badge">{t('week')} {weekNum}</span>
                   {isToday && <span className="today-badge">{t('today')}</span>}
                 </div>
                 <div className="day-lessons">
