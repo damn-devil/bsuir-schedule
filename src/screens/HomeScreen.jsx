@@ -141,6 +141,8 @@ function ScheduleView() {
 
   const examLessons = schedule.exams || []
 
+  const [showExamsOnly, setShowExamsOnly] = useState(false)
+
   return (
     <div className="screen">
       <header className="screen-header">
@@ -167,33 +169,45 @@ function ScheduleView() {
         </div>
       )}
 
-      <div className="schedule-days">
-        {dayKeys.length === 0 && examLessons.length === 0 && (
-          <div className="empty-state"><p>{t('noLessons')}</p><span>{t('noLessonsDesc')}</span></div>
-        )}
-        {dayKeys.map((dk) => {
-          const lessons = filterFutureLessons(dk, days[dk] || [], s.subgroup, currentWeek)
-          if (lessons.length === 0) return null
-          const isToday = dk.includes(todayName)
-          return (
-            <div key={dk} className={`day-section ${isToday ? 'today' : ''}`}>
-              <div className="day-header">
-                <span className="day-name">{dk}</span>
-                {(() => { const dd = getDateForDay(dk); return dd ? <span className="day-date">{dd.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span> : null })()}
-                {isToday && <span className="today-badge">{t('today')}</span>}
-              </div>
-              <div className="day-lessons">
-                {lessons.map((l, i) => <LessonCard key={i} lesson={l} isToday={isToday} />)}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
       {examLessons.length > 0 && (
-        <div className="exams-section">
-          <h3 className="section-title">{t('exams')}</h3>
-          {examLessons.map((l, i) => <LessonCard key={`exam-${i}`} lesson={l} isExam />)}
+        <div className="subgroup-bar">
+          <button className={`chip ${!showExamsOnly ? 'active' : ''}`} onClick={() => setShowExamsOnly(false)}>{t('tabSchedule')}</button>
+          <button className={`chip ${showExamsOnly ? 'active' : ''}`} onClick={() => setShowExamsOnly(true)}>{t('exams')} ({examLessons.length})</button>
+        </div>
+      )}
+
+      {!showExamsOnly && (
+        <div className="schedule-days">
+          {dayKeys.length === 0 && (
+            <div className="empty-state"><p>{t('noLessons')}</p><span>{t('noLessonsDesc')}</span></div>
+          )}
+          {dayKeys.map((dk) => {
+            const lessons = filterFutureLessons(dk, days[dk] || [], s.subgroup, currentWeek)
+            if (lessons.length === 0) return null
+            const isToday = dk.includes(todayName)
+            return (
+              <div key={dk} className={`day-section ${isToday ? 'today' : ''}`}>
+                <div className="day-header">
+                  <span className="day-name">{dk}</span>
+                  {(() => { const dd = getDateForDay(dk); return dd ? <span className="day-date">{dd.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span> : null })()}
+                  {isToday && <span className="today-badge">{t('today')}</span>}
+                </div>
+                <div className="day-lessons">
+                  {lessons.map((l, i) => <LessonCard key={i} lesson={l} isToday={isToday} />)}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {showExamsOnly && (
+        <div className="schedule-days">
+          {examLessons.length === 0 ? (
+            <div className="empty-state"><p>{t('noExams')}</p></div>
+          ) : (
+            examLessons.map((l, i) => <LessonCard key={`exam-${i}`} lesson={l} isExam />)
+          )}
         </div>
       )}
 
