@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../store.jsx'
 import { Icon } from '../components/Icon.jsx'
 import { Loader } from '../components/Loader.jsx'
+import { t } from '../lib/i18n.js'
 
 export function SearchEmployeeScreen() {
   const { s, a } = useStore()
@@ -30,17 +31,17 @@ export function SearchEmployeeScreen() {
   return (
     <div className="screen">
       <header className="screen-header">
-        <div><h1>Преподаватель</h1><p className="screen-sub">Поиск по ФИО</p></div>
+        <div><h1>{t('employeeSearch')}</h1><p className="screen-sub">{t('search')}</p></div>
         <button className="icon-btn" onClick={() => a.setView('home')}><Icon name="arrow-left" size={18} /></button>
       </header>
       <div className="search-field glass">
         <Icon name="search" size={16} />
-        <input autoFocus placeholder="Фамилия преподавателя" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input autoFocus placeholder={t('search')} value={query} onChange={(e) => setQuery(e.target.value)} />
         {query && <button className="search-clear" onClick={() => setQuery('')}><Icon name="x" size={14} /></button>}
       </div>
       <div className="search-results">
         {loading && employees.length === 0 && <div style={{ padding: '40px', textAlign: 'center' }}><Loader /></div>}
-        {!loading && employees.length === 0 && query && <div className="empty-state"><p>Ничего не найдено</p></div>}
+        {!loading && employees.length === 0 && query && <div className="empty-state"><p>{t('nothingFound')}</p></div>}
         {employees.map((e) => (
           <button key={e.id || e.urlId} className="search-item glass" onClick={() => a.selectEmployee(e)}>
             <span className="search-item-main"><strong>{e.shortName || e.name}</strong>{e.department?.name && <small>{e.department.name}</small>}</span>

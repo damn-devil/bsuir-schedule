@@ -92,10 +92,11 @@ export function StoreProvider({ children }) {
 
   useEffect(() => {
     const th = savedTheme(), ac = savedAccent()
-    applyTheme(th, ac)
+    const dark = applyTheme(th, ac)
     dispatch({ type: 'SET_THEME', v: th })
     dispatch({ type: 'SET_ACCENT', v: ac })
-    if (state.group) loadSchedule('group', state.group.studentGroup)
+    dispatch({ type: 'SET_DARK', v: dark })
+    if (state.group) loadSchedule('group', state.group.name)
     else if (state.employee) loadSchedule('employee', state.employee.urlId)
   }, [])
 
@@ -103,7 +104,7 @@ export function StoreProvider({ children }) {
     selectGroup: async (g) => {
       saveGroup(g); saveEmployee(null)
       dispatch({ type: 'SET_GROUP', v: g })
-      await loadSchedule('group', g.studentGroup)
+      await loadSchedule('group', g.name)
       dispatch({ type: 'VIEW', v: 'home' })
     },
     selectEmployee: async (e) => {
@@ -117,7 +118,7 @@ export function StoreProvider({ children }) {
       dispatch({ type: 'CLEAR_SCHEDULE' })
     },
     refresh: async () => {
-      if (state.group) await loadSchedule('group', state.group.studentGroup)
+      if (state.group) await loadSchedule('group', state.group.name)
       else if (state.employee) await loadSchedule('employee', state.employee.urlId)
     },
     refreshWeek: async () => {
@@ -136,7 +137,12 @@ export function StoreProvider({ children }) {
       try { const a = await api.auditories(); dispatch({ type: 'SET_AUDITORIES', v: a || [] }) } catch { dispatch({ type: 'SET_AUDITORIES', v: [] }) }
     },
     setView: (v) => dispatch({ type: 'VIEW', v }),
-    setTheme: (t) => { saveTheme(t); applyTheme(t, state.accent); dispatch({ type: 'SET_THEME', v: t }) },
+    setTheme: (t) => {
+      saveTheme(t)
+      const dark = applyTheme(t, state.accent)
+      dispatch({ type: 'SET_THEME', v: t })
+      dispatch({ type: 'SET_DARK', v: dark })
+    },
     setAccent: (a) => { saveAccent(a); applyTheme(state.theme, a); dispatch({ type: 'SET_ACCENT', v: a }) },
     setSubgroup: (s) => { saveSubgroup(s); dispatch({ type: 'SET_SUBGROUP', v: s }) },
     completeOnboard: () => { saveOnboarded(); dispatch({ type: 'ONBOARDED' }) },

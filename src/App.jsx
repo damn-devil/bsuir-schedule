@@ -9,19 +9,20 @@ import { FacultiesScreen } from './screens/FacultiesScreen.jsx'
 import { SettingsScreen } from './screens/SettingsScreen.jsx'
 import { Toast } from './components/Toast.jsx'
 import { Icon } from './components/Icon.jsx'
+import { t } from './lib/i18n.js'
 import './index.css'
 
 function TabBar() {
   const { s, a } = useStore()
   if (!s.onboarded || s.view === 'onboard') return null
   const tabs = [
-    { id: 'home', icon: 'home', label: 'Главная' },
-    { id: 'search-group', icon: 'users', label: 'Группы' },
-    { id: 'search-employee', icon: 'user', label: 'Препод.' },
-    { id: 'settings', icon: 'settings', label: 'Настройки' },
+    { id: 'home', icon: 'calendar', label: t('tabSchedule') },
+    { id: 'search-group', icon: 'users', label: t('tabGroups') },
+    { id: 'search-employee', icon: 'user', label: t('tabEmployees') },
+    { id: 'settings', icon: 'settings', label: t('tabSettings') },
   ]
   return (
-    <nav className="tab-bar" aria-label="Разделы">
+    <nav className="tab-bar" aria-label="Navigation">
       {tabs.map((t) => (
         <button key={t.id} className={`tab-item ${s.view === t.id ? 'active' : ''}`} onClick={() => a.setView(t.id)}>
           <span className="tab-icon"><Icon name={t.icon} /></span>
@@ -49,8 +50,8 @@ function UpdateBanner() {
   if (!show) return null
   return (
     <div className="update-banner" role="status">
-      <span>Доступна новая версия</span>
-      <button className="btn btn-primary btn-sm" onClick={() => window.location.reload()}>Обновить</button>
+      <span>{t('updateAvailable')}</span>
+      <button className="btn btn-primary btn-sm" onClick={() => window.location.reload()}>{t('update')}</button>
     </div>
   )
 }

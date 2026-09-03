@@ -14,6 +14,8 @@ export const savedSubgroup = () => g('sub', 0)
 export const saveSubgroup = (v) => sv('sub', v)
 export const savedOnboarded = () => g('onb', false)
 export const saveOnboarded = () => sv('onb', true)
+export const savedLang = () => g('lang', 'ru')
+export const saveLang = (v) => sv('lang', v)
 
 export function applyTheme(theme, accent) {
   const r = document.documentElement
