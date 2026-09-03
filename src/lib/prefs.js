@@ -72,8 +72,13 @@ export function applyTheme(themeName, accent) {
   r.style.colorScheme = dark ? 'dark' : 'light'
   r.classList.toggle('is-dark', dark)
 
-  const m = document.querySelector('meta[name="theme-color"]')
-  if (m) m.content = dark ? t.brutalPaper : '#efe9dc'
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+    const isDarkTag = m.media?.includes('dark')
+    const isLightTag = m.media?.includes('light')
+    if (isDarkTag) m.content = dark ? t.brutalPaper : 'about:blank'
+    else if (isLightTag) m.content = dark ? 'about:blank' : t.brutalPaper
+    else m.content = dark ? t.brutalPaper : '#efe9dc'
+  })
   return dark
 }
 
