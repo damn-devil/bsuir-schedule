@@ -339,23 +339,23 @@ input { font-family: inherit; border: none; outline: none; background: transpare
 /* TAB BAR */
 .tab-bar {
   position: fixed; bottom: calc(14px + var(--safe-bottom)); left: 50%;
-  transform: translateX(-50%); display: flex; align-items: center; gap: 2px;
-  width: fit-content; max-width: calc(100vw - 40px); height: 52px;
+  transform: translateX(-50%); display: flex; align-items: center; gap: 4px;
+  width: fit-content; max-width: calc(100vw - 32px); height: 52px;
   background: var(--brutal-card); border: 2px solid var(--brutal-ink);
   border-radius: 14px; box-shadow: 5px 5px 0 var(--brutal-ink);
   padding: 4px; z-index: 50;
 }
 .tab-item {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 1px; min-width: 50px; height: 42px; padding: 2px 8px; border-radius: 10px;
+  gap: 1px; min-width: 44px; height: 42px; padding: 2px 6px; border-radius: 10px;
   color: var(--text2); background: transparent;
   transition: all 0.15s var(--spring);
 }
 .tab-item.active { color: var(--brutal-paper); background: var(--accent); }
 .tab-item:active { transform: scale(0.88); background: var(--accent); color: var(--brutal-paper); }
-.tab-icon { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; }
-.tab-icon svg { width: 18px; height: 18px; stroke-width: 2.5; }
-.tab-label { font-size: 9px; font-weight: 800; letter-spacing: -0.01em; }
+.tab-icon { display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; }
+.tab-icon svg { width: 16px; height: 16px; stroke-width: 2.5; }
+.tab-label { font-size: 8px; font-weight: 800; letter-spacing: -0.01em; }
 
 /* TOAST */
 .toast {
