@@ -41,6 +41,21 @@ export function lessonColor(type) {
   return LESSON_COLORS[type] || '#8e8e93'
 }
 
+const LESSON_TYPE_NAMES = {
+  'ЛК': 'Лекция',
+  'ПЗ': 'Практическое занятие',
+  'ЛР': 'Лабораторная работа',
+  'КП': 'Курсовое проектирование',
+  'КР': 'Курсовая работа',
+  'ЭКЗАМЕН': 'Экзамен',
+  'ЗАЧЕТ': 'Зачет',
+  'Консультация': 'Консультация',
+}
+
+export function lessonTypeName(type) {
+  return LESSON_TYPE_NAMES[type] || type || '?'
+}
+
 export function lessonTime(start, end) {
   return `${start || '??:??'} – ${end || '??:??'}`
 }

@@ -3,7 +3,7 @@ import { useStore } from '../store.jsx'
 import { api } from '../api.js'
 import { Icon } from '../components/Icon.jsx'
 import { Loader } from '../components/Loader.jsx'
-import { WEEKDAYS, lessonColor, lessonTime, filterBySubgroup, sortLessonsByTime, getLessonProgress, isLessonNow, LESSON_SLOTS, BREAK_TIMES } from '../lib/format.js'
+import { WEEKDAYS, lessonColor, lessonTime, lessonTypeName, filterBySubgroup, sortLessonsByTime, getLessonProgress, isLessonNow, LESSON_SLOTS, BREAK_TIMES } from '../lib/format.js'
 import { t, getLang } from '../lib/i18n.js'
 
 function getDayName(date) {
@@ -303,7 +303,7 @@ function LessonCard({ lesson, isExam, isToday }) {
         <div className="lesson-top">
           <span className="lesson-type" style={{ color }}>
             {lessonNum && <span className="lesson-num">{lessonNum}</span>}
-            {isExam ? 'EXAM' : lesson.lessonTypeAbbrev || lesson.lessonType || '?'}
+            {isExam ? 'Экзамен' : lessonTypeName(lesson.lessonTypeAbbrev || lesson.lessonType)}
           </span>
           <span className="lesson-time">{lessonTime(lesson.startLessonTime, lesson.endLessonTime)}</span>
         </div>

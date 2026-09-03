@@ -1,6 +1,6 @@
 import { useStore } from '../store.jsx'
 import { Icon } from '../components/Icon.jsx'
-import { lessonColor, lessonTime } from '../lib/format.js'
+import { lessonColor, lessonTime, lessonTypeName } from '../lib/format.js'
 import { t, getLang } from '../lib/i18n.js'
 
 function ExamCard({ exam }) {
@@ -22,7 +22,7 @@ function ExamCard({ exam }) {
       <div className="lesson-body">
         <div className="lesson-top">
           <span className="lesson-type" style={{ color }}>
-            {exam.lessonTypeAbbrev || exam.lessonType || 'EXAM'}
+            {lessonTypeName(exam.lessonTypeAbbrev || exam.lessonType || 'Экзамен')}
           </span>
           {dateStr && <span className="lesson-time">{dateStr}</span>}
         </div>
