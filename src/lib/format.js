@@ -2,14 +2,38 @@ export const WEEKDAYS = ['Понедельник', 'Вторник', 'Среда
 export const WEEKDAYS_EN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 export const WEEKDAYS_SHORT = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
+export const LESSON_SLOTS = [
+  { num: 1, start: '08:30', end: '09:55' },
+  { num: 2, start: '10:05', end: '11:30' },
+  { num: 3, start: '12:00', end: '13:25' },
+  { num: 4, start: '13:35', end: '15:00' },
+  { num: 5, start: '15:30', end: '16:55' },
+  { num: 6, start: '17:05', end: '18:30' },
+  { num: 7, start: '18:40', end: '20:05' },
+]
+
+export const BREAK_TIMES = [
+  { after: 1, start: '09:55', end: '10:05', minutes: 10 },
+  { after: 2, start: '11:30', end: '12:00', minutes: 30 },
+  { after: 3, start: '13:25', end: '13:35', minutes: 10 },
+  { after: 4, start: '15:00', end: '15:30', minutes: 30 },
+  { after: 5, start: '16:55', end: '17:05', minutes: 10 },
+  { after: 6, start: '18:30', end: '18:40', minutes: 30 },
+]
+
 const LESSON_COLORS = {
+  'ЛК': '#34c759',
   'Лекция': '#34c759',
+  'ПЗ': '#ff3b30',
   'Практическое занятие': '#ff3b30',
+  'ЛР': '#ff9500',
   'Лабораторная работа': '#ff9500',
   'Консультация': '#af52de',
+  'КП': '#5856d6',
+  'Курсовое проектирование': '#5856d6',
   'Экзамен': '#8b5cf6',
   'Зачет': '#8b5cf6',
-  'Курсовое проектирование': '#5856d6',
+  'КР': '#8b5cf6',
   'Дифференцированный зачет': '#8b5cf6',
 }
 
@@ -76,26 +100,17 @@ export function sortLessonsByTime(lessons) {
   })
 }
 
-export function getLessonTimeRange(start, end) {
-  if (!start || !end) return null
-  const now = new Date()
-  const [sh, sm] = start.split(':').map(Number)
-  const [eh, em] = end.split(':').map(Number)
-  const startDate = new Date(now)
-  startDate.setHours(sh, sm, 0, 0)
-  const endDate = new Date(now)
-  endDate.setHours(eh, em, 0, 0)
-  return { start: startDate, end: endDate }
+function timeToMs(time) {
+  const [h, m] = time.split(':').map(Number)
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m, 0, 0).getTime()
 }
 
 export function getLessonProgress(start, end) {
   if (!start || !end) return { progress: 0, isNow: false, remaining: '' }
   const now = Date.now()
-  const [sh, sm] = start.split(':').map(Number)
-  const [eh, em] = end.split(':').map(Number)
-  const today = new Date()
-  const startMs = new Date(today.getFullYear(), today.getMonth(), today.getDate(), sh, sm, 0, 0).getTime()
-  const endMs = new Date(today.getFullYear(), today.getMonth(), today.getDate(), eh, em, 0, 0).getTime()
+  const startMs = timeToMs(start)
+  const endMs = timeToMs(end)
 
   if (now < startMs) return { progress: 0, isNow: false, remaining: '' }
   if (now >= endMs) return { progress: 100, isNow: false, remaining: '' }
@@ -114,10 +129,25 @@ export function getLessonProgress(start, end) {
 export function isLessonNow(start, end) {
   if (!start || !end) return false
   const now = Date.now()
-  const [sh, sm] = start.split(':').map(Number)
-  const [eh, em] = end.split(':').map(Number)
-  const today = new Date()
-  const startMs = new Date(today.getFullYear(), today.getMonth(), today.getDate(), sh, sm, 0, 0).getTime()
-  const endMs = new Date(today.getFullYear(), today.getMonth(), today.getDate(), eh, em, 0, 0).getTime()
-  return now >= startMs && now < endMs
+  return now >= timeToMs(start) && now < timeToMs(end)
+}
+
+export function getNextLesson(lessons) {
+  const now = Date.now()
+  for (const l of lessons) {
+    if (!l.startLessonTime) continue
+    const startMs = timeToMs(l.startLessonTime)
+    if (startMs > now) return l
+  }
+  return null
+}
+
+export function isBreakNow() {
+  const now = Date.now()
+  for (const b of BREAK_TIMES) {
+    const startMs = timeToMs(b.start)
+    const endMs = timeToMs(b.end)
+    if (now >= startMs && now < endMs) return b
+  }
+  return null
 }

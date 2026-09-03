@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useStore } from '../store.jsx'
 import { Icon } from '../components/Icon.jsx'
 import { Loader } from '../components/Loader.jsx'
-import { WEEKDAYS, lessonColor, lessonTime, filterBySubgroup, sortLessonsByTime, getLessonProgress, isLessonNow } from '../lib/format.js'
+import { WEEKDAYS, lessonColor, lessonTime, filterBySubgroup, sortLessonsByTime, getLessonProgress, isLessonNow, LESSON_SLOTS, BREAK_TIMES, isBreakNow } from '../lib/format.js'
 import { t, getLang } from '../lib/i18n.js'
 
 const DAY_ORDER = { 'Понедельник': 1, 'Вторник': 2, 'Среда': 3, 'Четверг': 4, 'Пятница': 5, 'Суббота': 6, 'Воскресенье': 0 }
@@ -215,7 +215,15 @@ function ScheduleView() {
                   {isToday && <span className="today-badge">{t('today')}</span>}
                 </div>
                 <div className="day-lessons">
-                  {lessons.map((l, i) => <LessonCard key={i} lesson={l} isToday={isToday} />)}
+                  {lessons.map((l, i) => {
+                    const num = getLessonNumber(l.startLessonTime)
+                    return (
+                      <div key={i}>
+                        <LessonCard lesson={l} isToday={isToday} />
+                        {num && num < 7 && lessons[i + 1] && <BreakIndicator after={num} />}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )
@@ -249,6 +257,13 @@ function ScheduleView() {
   )
 }
 
+function getLessonNumber(start) {
+  for (const s of LESSON_SLOTS) {
+    if (s.start === start) return s.num
+  }
+  return null
+}
+
 function LessonCard({ lesson, isExam, isToday }) {
   const [, setTick] = useState(0)
   const color = isExam ? '#8b5cf6' : lessonColor(lesson.lessonTypeAbbrev || lesson.lessonType)
@@ -259,6 +274,7 @@ function LessonCard({ lesson, isExam, isToday }) {
   const employees = lesson.employees || []
   const empStr = employees.map((e) => e.fio || e.shortName || [e.lastName, e.firstName?.[0], e.middleName?.[0]].filter(Boolean).join(' ')).filter(Boolean).join(', ')
   const numSub = lesson.numSubgroup || 0
+  const lessonNum = getLessonNumber(lesson.startLessonTime)
 
   const timer = getLessonProgress(lesson.startLessonTime, lesson.endLessonTime)
   const nowActive = isLessonNow(lesson.startLessonTime, lesson.endLessonTime)
@@ -279,7 +295,10 @@ function LessonCard({ lesson, isExam, isToday }) {
       </div>
       <div className="lesson-body">
         <div className="lesson-top">
-          <span className="lesson-type" style={{ color }}>{isExam ? 'EXAM' : lesson.lessonTypeAbbrev || lesson.lessonType || '?'}</span>
+          <span className="lesson-type" style={{ color }}>
+            {lessonNum && <span className="lesson-num">{lessonNum}</span>}
+            {isExam ? 'EXAM' : lesson.lessonTypeAbbrev || lesson.lessonType || '?'}
+          </span>
           <span className="lesson-time">{lessonTime(lesson.startLessonTime, lesson.endLessonTime)}</span>
         </div>
         <div className="lesson-name">{lesson.subject || lesson.name || ''}</div>
@@ -296,6 +315,18 @@ function LessonCard({ lesson, isExam, isToday }) {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function BreakIndicator({ after }) {
+  const brk = BREAK_TIMES.find((b) => b.after === after)
+  if (!brk) return null
+  return (
+    <div className="break-indicator">
+      <span className="break-line" />
+      <span className="break-text">{brk.minutes} {t('breakMin')}</span>
+      <span className="break-line" />
     </div>
   )
 }

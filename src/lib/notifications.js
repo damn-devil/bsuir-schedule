@@ -27,45 +27,53 @@ function notify(title, body, tag) {
   }
 }
 
+function timeToMs(time) {
+  const [h, m] = time.split(':').map(Number)
+  const d = new Date()
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m, 0, 0).getTime()
+}
+
 export function scheduleLessonNotifications(lessons) {
   if (!lessons || !lessons.length) return
-  const now = Date.now()
-  const today = new Date()
-  const dow = today.getDay()
+  clearAllScheduled()
 
   lessons.forEach((l) => {
     if (!l.startLessonTime || !l.endLessonTime) return
-    const [sh, sm] = l.startLessonTime.split(':').map(Number)
-    const [eh, em] = l.endLessonTime.split(':').map(Number)
+    const subject = l.subject || 'Занятие'
+    const startMs = timeToMs(l.startLessonTime)
+    const endMs = timeToMs(l.endLessonTime)
+    const tag = `lesson-${l.subject}-${l.startLessonTime}`
 
-    const lessonDay = getLessonDay(l, dow)
-    if (lessonDay === null) return
-
-    const startMs = lessonDay.setHours(sh, sm, 0, 0)
-    const endMs = lessonDay.setHours(eh, em, 0, 0)
-
-    scheduleAt(startMs - 5 * 60000, `${l.subject || 'Занятие'}`, 'Начало через 5 минут', `lesson-start-${l.id || l.subject}-${startMs}`)
-    scheduleAt(startMs, `${l.subject || 'Занятие'}`, 'Занятие началось', `lesson-begins-${l.id || l.subject}-${startMs}`)
-    scheduleAt(endMs, `${l.subject || 'Занятие'}`, 'Занятие закончилось', `lesson-ends-${l.id || l.subject}-${endMs}`)
+    scheduleAt(startMs - 5 * 60000, subject, `Начало через 5 мин`, `${tag}-5min`)
+    scheduleAt(startMs, subject, `Пара началась`, `${tag}-start`)
+    scheduleAt(endMs, subject, `Пара закончилась`, `${tag}-end`)
   })
+
+  const now = Date.now()
+  let nextLesson = null
+  for (const l of lessons) {
+    if (!l.startLessonTime) continue
+    const s = timeToMs(l.startLessonTime)
+    if (s > now) { nextLesson = l; break }
+  }
+  if (nextLesson) {
+    const ms = timeToMs(nextLesson.startLessonTime) - 15 * 60000
+    if (ms > now) {
+      scheduleAt(ms, nextLesson.subject || 'Занятие', `Следующая пара через 15 мин`, `next-15min`)
+    }
+  }
 }
 
-function getLessonDay(lesson, currentDow) {
-  const weeks = lesson.weekNumber || []
-  const dayName = (lesson.dayOfWeek || '').toLowerCase()
-  const dayMap = { 'понедельник': 1, 'вторник': 2, 'среда': 3, 'четверг': 4, 'пятница': 5, 'суббота': 6 }
-  const targetDow = dayMap[dayName]
-  if (!targetDow) return null
-
-  const now = new Date()
-  const result = new Date(now)
-  const diff = targetDow - currentDow
-  result.setDate(now.getDate() + (diff >= 0 ? diff : diff + 7))
-  return result
-}
+const timers = []
 
 function scheduleAt(ms, title, body, tag) {
   const delay = ms - Date.now()
   if (delay <= 0 || delay > 7 * 24 * 3600 * 1000) return
-  setTimeout(() => notify(title, body, tag), delay)
+  const id = setTimeout(() => notify(title, body, tag), delay)
+  timers.push(id)
+}
+
+function clearAllScheduled() {
+  timers.forEach(clearTimeout)
+  timers.length = 0
 }
