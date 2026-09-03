@@ -2,8 +2,74 @@ import { useState, useEffect } from 'react'
 import { useStore } from '../store.jsx'
 import { Icon } from '../components/Icon.jsx'
 import { Loader } from '../components/Loader.jsx'
-import { WEEKDAYS, lessonColor, lessonTime, filterBySubgroup, getLessonProgress, isLessonNow } from '../lib/format.js'
+import { WEEKDAYS, lessonColor, lessonTime, filterBySubgroup, sortLessonsByTime, getLessonProgress, isLessonNow } from '../lib/format.js'
 import { t, getLang } from '../lib/i18n.js'
+
+const DAY_ORDER = { 'Понедельник': 1, 'Вторник': 2, 'Среда': 3, 'Четверг': 4, 'Пятница': 5, 'Суббота': 6, 'Воскресенье': 0 }
+
+function getTodayDow() {
+  const d = new Date().getDay()
+  return d === 0 ? 7 : d
+}
+
+function getTodayDayName() {
+  const d = new Date().getDay()
+  return WEEKDAYS[d === 0 ? 6 : d - 1]
+}
+
+function getDateForDay(dayKey) {
+  const dow = DAY_ORDER[dayKey]
+  if (!dow) return null
+  const today = new Date()
+  const todayDow = today.getDay() || 7
+  const diff = dow - todayDow
+  const d = new Date(today)
+  d.setDate(today.getDate() + diff)
+  return d
+}
+
+function isLessonEnded(start, end) {
+  if (!start || !end) return false
+  const now = Date.now()
+  const today = new Date()
+  const [eh, em] = end.split(':').map(Number)
+  const endMs = new Date(today.getFullYear(), today.getMonth(), today.getDate(), eh, em, 0, 0).getTime()
+  return now >= endMs
+}
+
+function filterFutureLessons(dayKey, lessons, subgroup, currentWeek) {
+  const todayDow = getTodayDow()
+  const dayDow = DAY_ORDER[dayKey] ?? 99
+  const isPastDay = dayDow < todayDow
+  const isToday = dayDow === todayDow
+
+  if (isPastDay) return []
+
+  let filtered = filterBySubgroup(lessons, subgroup)
+
+  if (currentWeek && currentWeek > 0) {
+    filtered = filtered.filter((l) => {
+      const weeks = l.weekNumber || []
+      return weeks.length === 0 || weeks.includes(currentWeek)
+    })
+  }
+
+  if (isToday) {
+    filtered = filtered.filter((l) => !isLessonEnded(l.startLessonTime, l.endLessonTime))
+  }
+
+  return sortLessonsByTime(filtered)
+}
+
+function getSortedDayKeys(days) {
+  const todayDow = getTodayDow()
+  return Object.keys(days)
+    .filter((dk) => {
+      const dow = DAY_ORDER[dk] ?? 99
+      return dow >= todayDow
+    })
+    .sort((a, b) => (DAY_ORDER[a] ?? 99) - (DAY_ORDER[b] ?? 99))
+}
 
 export function HomeScreen() {
   const { s, a } = useStore()
@@ -69,7 +135,9 @@ function ScheduleView() {
   const subtitle = s.employee?.academicDepartment?.[0] || ''
 
   const days = schedule.schedules || {}
-  const dayKeys = Object.keys(days).sort((a, b) => new Date(a) - new Date(b))
+  const dayKeys = getSortedDayKeys(days)
+  const todayName = getTodayDayName()
+  const currentWeek = s.currentWeek || 1
 
   const examLessons = schedule.exams || []
 
@@ -104,20 +172,18 @@ function ScheduleView() {
           <div className="empty-state"><p>{t('noLessons')}</p><span>{t('noLessonsDesc')}</span></div>
         )}
         {dayKeys.map((dk) => {
-          const lessons = filterBySubgroup(days[dk] || [], s.subgroup)
+          const lessons = filterFutureLessons(dk, days[dk] || [], s.subgroup, currentWeek)
           if (lessons.length === 0) return null
-          const d = new Date(dk)
-          const wd = d.getDay()
-          const isT = new Date().toDateString() === d.toDateString()
+          const isToday = dk.includes(todayName)
           return (
-            <div key={dk} className={`day-section ${isT ? 'today' : ''}`}>
+            <div key={dk} className={`day-section ${isToday ? 'today' : ''}`}>
               <div className="day-header">
-                <span className="day-name">{WEEKDAYS[(wd + 6) % 7]}</span>
-                <span className="day-date">{d.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span>
-                {isT && <span className="today-badge">{t('today')}</span>}
+                <span className="day-name">{dk}</span>
+                {(() => { const dd = getDateForDay(dk); return dd ? <span className="day-date">{dd.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span> : null })()}
+                {isToday && <span className="today-badge">{t('today')}</span>}
               </div>
               <div className="day-lessons">
-                {lessons.map((l, i) => <LessonCard key={i} lesson={l} isToday={isT} />)}
+                {lessons.map((l, i) => <LessonCard key={i} lesson={l} isToday={isToday} />)}
               </div>
             </div>
           )

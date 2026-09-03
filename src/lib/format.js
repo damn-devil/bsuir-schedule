@@ -48,8 +48,32 @@ export function parseSchedule(schedule) {
 }
 
 export function filterBySubgroup(lessons, subgroup) {
-  if (!subgroup || subgroup === 0) return lessons
-  return lessons.filter((l) => !l.numSubgroup || l.numSubgroup === 0 || l.numSubgroup === subgroup)
+  if (!subgroup || subgroup === 0) {
+    const seen = new Set()
+    return lessons.filter((l) => {
+      const key = `${l.subject}-${l.startLessonTime}-${l.numSubgroup || 0}-${(l.weekNumber || []).join(',')}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }
+  const seen = new Set()
+  return lessons.filter((l) => {
+    const sub = l.numSubgroup || 0
+    if (sub !== 0 && sub !== subgroup) return false
+    const key = `${l.subject}-${l.startLessonTime}-${l.numSubgroup || 0}-${(l.weekNumber || []).join(',')}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+export function sortLessonsByTime(lessons) {
+  return [...lessons].sort((a, b) => {
+    const at = a.startLessonTime || '99:99'
+    const bt = b.startLessonTime || '99:99'
+    return at.localeCompare(bt)
+  })
 }
 
 export function getLessonTimeRange(start, end) {
