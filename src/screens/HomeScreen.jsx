@@ -198,13 +198,21 @@ function ScheduleView() {
       {pinned.type === 'employee' && s.pinnedAnnouncements?.length > 0 && (
         <div className="announcements-section">
           <h3 className="section-title">{t('announcements')}</h3>
-          {s.pinnedAnnouncements.map((an, i) => (
-            <div key={i} className="announcement-card glass">
-              <div className="ann-title">{an.title || ''}</div>
-              <div className="ann-date">{an.date ? new Date(an.date).toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU') : ''}</div>
-              <div className="ann-text" dangerouslySetInnerHTML={{ __html: an.body || an.text || '' }} />
-            </div>
-          ))}
+          {s.pinnedAnnouncements.map((an, i) => {
+            const dateStr = an.date ? new Date(an.date).toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
+            const timeStr = an.startTime && an.endTime ? `${an.startTime} – ${an.endTime}` : ''
+            const audStr = an.auditory?.name || ''
+            return (
+              <div key={an.id || i} className="announcement-card glass">
+                <div className="ann-header">
+                  {dateStr && <span className="ann-date">{dateStr}</span>}
+                  {timeStr && <span className="ann-time">{timeStr}</span>}
+                  {audStr && <span className="ann-aud">{audStr}</span>}
+                </div>
+                <div className="ann-text">{an.content || ''}</div>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

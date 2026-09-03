@@ -102,7 +102,10 @@ export function StoreProvider({ children }) {
       dispatch({ type: setSchedule, v: sched })
       if (week !== null) dispatch({ type: setWeek, v: Number(week) || 1 })
       if (type === 'employee') {
-        api.announcementsEmployee(id).then((a) => dispatch({ type: setAnnouncements, v: a || [] })).catch(() => {})
+        api.announcementsEmployee(id).then((a) => {
+          const list = Array.isArray(a) ? a : (a?.content || [])
+          dispatch({ type: setAnnouncements, v: list })
+        }).catch(() => {})
       } else {
         dispatch({ type: setAnnouncements, v: [] })
       }

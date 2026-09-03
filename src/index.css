@@ -318,8 +318,10 @@ input { font-family: inherit; border: none; outline: none; background: transpare
 /* ANNOUNCEMENTS */
 .announcements-section { margin-top: 24px; }
 .announcement-card { padding: 14px; border-radius: 12px; margin-bottom: 8px; }
-.ann-title { font-weight: 800; font-size: 13px; margin-bottom: 4px; }
-.ann-date { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+.ann-header { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.ann-date { font-size: 12px; font-weight: 700; color: var(--accent); background: var(--brutal-btn-bg); padding: 2px 8px; border-radius: 6px; }
+.ann-time { font-size: 12px; font-weight: 600; color: var(--text2); background: var(--brutal-btn-bg); padding: 2px 8px; border-radius: 6px; }
+.ann-aud { font-size: 12px; font-weight: 600; color: var(--text2); background: var(--brutal-btn-bg); padding: 2px 8px; border-radius: 6px; }
 .ann-text { font-size: 13px; line-height: 1.5; }
 .ann-text a { color: var(--accent); }
 
