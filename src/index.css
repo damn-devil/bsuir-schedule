@@ -173,6 +173,8 @@ input { font-family: inherit; border: none; outline: none; background: transpare
 
 /* SUBGROUP */
 .subgroup-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.subgroup-bar.inline { margin-top: 6px; margin-bottom: 0; }
+.subgroup-bar.inline .chip { padding: 4px 12px; font-size: 12px; box-shadow: 2px 2px 0 var(--brutal-ink); }
 .preview-bar { display: flex; gap: 10px; margin-bottom: 16px; }
 .subgroup-label { font-size: 13px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .chip {

@@ -166,6 +166,15 @@ export function PreviewScreen() {
         <div>
           <h1 style={{ fontSize: '28px' }}>{title}</h1>
           {subtitle && <p className="screen-sub">{subtitle}</p>}
+          {preview.type === 'group' && (
+            <div className="subgroup-bar inline">
+              {[0, 1, 2].map((n) => (
+                <button key={n} className={`chip ${s.subgroup === n ? 'active' : ''}`} onClick={() => a.setSubgroup(n)}>
+                  {n === 0 ? t('all') : n}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <button className="icon-btn" onClick={() => a.setView('search-group')}><Icon name="arrow-left" size={18} /></button>
       </header>
@@ -195,17 +204,6 @@ export function PreviewScreen() {
           ))}
         </div>
       </div>
-
-      {preview.type === 'group' && (
-        <div className="subgroup-bar">
-          <span className="subgroup-label">{t('subgroup')}:</span>
-          {[0, 1, 2].map((n) => (
-            <button key={n} className={`chip ${s.subgroup === n ? 'active' : ''}`} onClick={() => a.setSubgroup(n)}>
-              {n === 0 ? t('all') : n}
-            </button>
-          ))}
-        </div>
-      )}
 
       {examLessons.length > 0 && (
         <div className="subgroup-bar">
