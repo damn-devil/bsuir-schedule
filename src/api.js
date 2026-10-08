@@ -17,4 +17,5 @@ export const api = {
   auditories: (signal) => get('/auditories', signal),
   announcementsEmployee: (urlId, signal) => get(`/announcements/employees?url-id=${encodeURIComponent(urlId)}`, signal),
   announcementsDepartment: (id, signal) => get(`/announcements/departments?id=${id}`, signal),
+  studentRating: (cardNumber, signal) => get(`/rating/studentRating?studentCardNumber=${encodeURIComponent(cardNumber)}`, signal),
 }

@@ -78,6 +78,39 @@ export function SettingsScreen() {
           <small>{t('pwaOffline')}</small>
         </div>
       </div>
+
+      {s.studentCard ? (
+        <div className="settings-section">
+          <h3 className="section-title">Профиль студента</h3>
+          <div className="glass" style={{ padding: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <Icon name="book" size={20} />
+              <div>
+                <strong style={{ display: 'block' }}>№ {s.studentCard}</strong>
+                <small style={{ color: 'var(--text2)' }}>{s.studentRating?.lessons?.length || 0} записей</small>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn btn-primary btn-sm" onClick={() => a.setView('student')}>Открыть оценки</button>
+              <button className="btn btn-danger-soft btn-sm" onClick={() => a.logoutStudent()}>Выйти</button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="settings-section">
+          <h3 className="section-title">Вход в систему</h3>
+          <div className="glass" style={{ padding: '16px' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text2)', marginBottom: '10px' }}>
+              Введите номер студенческого билета для просмотра оценок и пропусков
+            </p>
+            <input type="text" id="studentCard" placeholder="15350060" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '2px solid var(--brutal-ink)', background: 'var(--brutal-card)', color: 'var(--brutal-paper)', fontSize: '15px', fontWeight: 700, boxSizing: 'border-box' }} />
+            <button className="btn btn-primary btn-block" style={{ marginTop: '8px' }} onClick={() => {
+              const val = document.getElementById('studentCard')?.value || ''
+              a.login(val)
+            }}>Войти</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

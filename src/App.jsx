@@ -5,6 +5,7 @@ import { PreviewScreen } from './screens/PreviewScreen.jsx'
 import { SearchGroupScreen } from './screens/SearchGroupScreen.jsx'
 import { SearchEmployeeScreen } from './screens/SearchEmployeeScreen.jsx'
 import { ExamsScreen } from './screens/ExamsScreen.jsx'
+import { StudentScreen } from './screens/StudentScreen.jsx'
 import { AuditoriesScreen } from './screens/AuditoriesScreen.jsx'
 import { FacultiesScreen } from './screens/FacultiesScreen.jsx'
 import { SettingsScreen } from './screens/SettingsScreen.jsx'
@@ -66,6 +67,7 @@ function AppInner() {
   switch (s.view) {
     case 'preview': screen = <PreviewScreen />; break
     case 'exams': screen = <ExamsScreen />; break
+    case 'student': screen = <StudentScreen />; break
     case 'search-group': screen = <SearchGroupScreen />; break
     case 'search-employee': screen = <SearchEmployeeScreen />; break
     case 'auditories': screen = <AuditoriesScreen />; break

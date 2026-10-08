@@ -18,6 +18,8 @@ export const savedLang = () => g('lang', 'ru')
 export const saveLang = (v) => sv('lang', v)
 export const savedPinned = () => g('pin', null)
 export const savePinned = (v) => sv('pin', v)
+export const savedStudentCard = () => g('scard', null)
+export const saveStudentCard = (v) => sv('scard', v)
 
 const THEMES = {
   light: {

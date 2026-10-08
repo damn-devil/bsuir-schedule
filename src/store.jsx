@@ -4,7 +4,7 @@ import {
   savedGroup, saveGroup, savedEmployee, saveEmployee,
   savedTheme, saveTheme, savedAccent, saveAccent,
   savedSubgroup, saveSubgroup, savedOnboarded, saveOnboarded,
-  savedPinned, savePinned,
+  savedPinned, savePinned, savedStudentCard, saveStudentCard,
   applyTheme, initThemeListener,
 } from './lib/prefs.js'
 import { initNotifications, scheduleLessonNotifications } from './lib/notifications.js'
@@ -35,6 +35,9 @@ const init = {
   subgroup: savedSubgroup(),
   onboarded: true,
   notifEnabled: false,
+  studentCard: savedStudentCard(),
+  studentRating: null,
+  studentRatingLoading: false,
 }
 
 function reducer(s, a) {
@@ -55,6 +58,9 @@ function reducer(s, a) {
     case 'SET_DARK': return { ...s, isDark: a.v }
     case 'SET_THEME': return { ...s, theme: a.v }
     case 'SET_ACCENT': return { ...s, accent: a.v }
+    case 'SET_STUDENT_CARD': return { ...s, studentCard: a.v }
+    case 'SET_STUDENT_RATING': return { ...s, studentRating: a.v, studentRatingLoading: false }
+    case 'SET_STUDENT_RATING_LOADING': return { ...s, studentRatingLoading: a.v }
     case 'SET_SUBGROUP': return { ...s, subgroup: a.v }
     case 'ONBOARDED': return { ...s, onboarded: true, view: 'home' }
     case 'SET_NOTIF': return { ...s, notifEnabled: a.v }
@@ -135,6 +141,13 @@ export function StoreProvider({ children }) {
     if (p) {
       dispatch({ type: 'SET_PINNED', v: p })
       loadSchedule(p.type, p.data, 'SET_PINNED_SCHEDULE', 'SET_PINNED_WEEK', 'SET_PINNED_ANNOUNCEMENTS')
+    }
+
+    const sc = savedStudentCard()
+    if (sc) {
+      api.studentRating(sc).then((r) => {
+        dispatch({ type: 'SET_STUDENT_RATING', v: r })
+      }).catch(() => {})
     }
   }, [])
 
@@ -227,6 +240,38 @@ export function StoreProvider({ children }) {
       if (ok) toast(dispatch, 'Уведомления включены', 'success')
       else toast(dispatch, 'Уведомления запрещены в браузере', 'error')
       return ok
+    },
+    login: async (cardNumber) => {
+      const num = String(cardNumber).trim()
+      if (!num) { toast(dispatch, 'Введите номер студенческого', 'error'); return }
+      saveStudentCard(num)
+      dispatch({ type: 'SET_STUDENT_CARD', v: num })
+      dispatch({ type: 'SET_STUDENT_RATING_LOADING', v: true })
+      try {
+        const rating = await api.studentRating(num)
+        dispatch({ type: 'SET_STUDENT_RATING', v: rating })
+        toast(dispatch, 'Данные загружены', 'success')
+      } catch (e) {
+        dispatch({ type: 'SET_STUDENT_RATING_LOADING', v: false })
+        toast(dispatch, 'Студент не найден: ' + (e.message || ''), 'error')
+      }
+    },
+    logoutStudent: () => {
+      saveStudentCard(null)
+      dispatch({ type: 'SET_STUDENT_CARD', v: null })
+      dispatch({ type: 'SET_STUDENT_RATING', v: null })
+      toast(dispatch, 'Вы вышли из профиля', 'success')
+    },
+    refreshStudentRating: async () => {
+      const num = state.studentCard
+      if (!num) return
+      dispatch({ type: 'SET_STUDENT_RATING_LOADING', v: true })
+      try {
+        const rating = await api.studentRating(num)
+        dispatch({ type: 'SET_STUDENT_RATING', v: rating })
+      } catch {
+        dispatch({ type: 'SET_STUDENT_RATING_LOADING', v: false })
+      }
     },
     toast: (m, t) => toast(dispatch, m, t),
   }
