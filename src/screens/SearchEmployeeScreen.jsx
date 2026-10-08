@@ -34,7 +34,7 @@ export function SearchEmployeeScreen() {
     <div className="screen">
       <header className="screen-header">
         <div><h1>{t('employeeSearch')}</h1><p className="screen-sub">{t('search')}</p></div>
-        <button className="icon-btn" onClick={() => a.setView('home')}><Icon name="arrow-left" size={18} /></button>
+        <button className="icon-btn" onClick={() => a.setView('more')}><Icon name="arrow-left" size={18} /></button>
       </header>
       <div className="search-field glass">
         <Icon name="search" size={16} />

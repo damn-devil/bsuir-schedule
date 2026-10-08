@@ -69,7 +69,7 @@ export function StudentScreen() {
         <div className="empty-state">
           <Icon name="user" size={40} />
           <p>Введите номер студенческого билета в настройках</p>
-          <button className="btn btn-primary" onClick={() => a.setView('settings')}>В настройки</button>
+          <button className="btn btn-primary" onClick={() => a.setView('more')}>В настройки</button>
         </div>
       </div>
     )

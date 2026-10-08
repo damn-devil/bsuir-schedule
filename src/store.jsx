@@ -28,7 +28,7 @@ const init = {
   loading: false,
   error: null,
   toast: null,
-  view: savedPinned() ? 'home' : 'search-group',
+  view: savedPinned() ? 'home' : 'more',
   isDark: false,
   theme: savedTheme(),
   accent: savedAccent(),
@@ -38,6 +38,11 @@ const init = {
   studentCard: savedStudentCard(),
   studentRating: null,
   studentRatingLoading: false,
+  showMenu: false,
+  showExams: false,
+  searchingGroup: false,
+  searchProgress: null,
+  foundGroups: null,
 }
 
 function reducer(s, a) {
@@ -61,6 +66,10 @@ function reducer(s, a) {
     case 'SET_STUDENT_CARD': return { ...s, studentCard: a.v }
     case 'SET_STUDENT_RATING': return { ...s, studentRating: a.v, studentRatingLoading: false }
     case 'SET_STUDENT_RATING_LOADING': return { ...s, studentRatingLoading: a.v }
+    case 'SET_SHOW_MENU': return { ...s, showMenu: a.v }
+    case 'SET_SHOW_EXAMS': return { ...s, showExams: a.v }
+    case 'SET_SEARCHING_GROUP': return { ...s, searchingGroup: a.v, searchProgress: a.p || null }
+    case 'SET_FOUND_GROUPS': return { ...s, foundGroups: a.v, searchingGroup: false, searchProgress: null }
     case 'SET_SUBGROUP': return { ...s, subgroup: a.v }
     case 'ONBOARDED': return { ...s, onboarded: true, view: 'home' }
     case 'SET_NOTIF': return { ...s, notifEnabled: a.v }
@@ -247,15 +256,57 @@ export function StoreProvider({ children }) {
       saveStudentCard(num)
       dispatch({ type: 'SET_STUDENT_CARD', v: num })
       dispatch({ type: 'SET_STUDENT_RATING_LOADING', v: true })
+      dispatch({ type: 'SET_FOUND_GROUPS', v: null })
+      dispatch({ type: 'SET_SEARCHING_GROUP', v: true })
       try {
-        const rating = await api.studentRating(num)
-        dispatch({ type: 'SET_STUDENT_RATING', v: rating })
-        toast(dispatch, 'Данные загружены', 'success')
+        const result = await api.findGroupsByCard(num, (done, total) => {
+          dispatch({ type: 'SET_SEARCHING_GROUP', v: true, p: { done, total } })
+        })
+        dispatch({ type: 'SET_STUDENT_RATING', v: result.rating })
+        dispatch({ type: 'SET_FOUND_GROUPS', v: result.groups })
+        if (result.groups.length === 1) {
+          const g = result.groups[0]
+          const sched = await api.scheduleGroup(g.name)
+          const week = await api.currentWeek().catch(() => null)
+          savePinned({ type: 'group', data: g })
+          dispatch({ type: 'SET_PINNED', v: { type: 'group', data: g } })
+          dispatch({ type: 'SET_PINNED_SCHEDULE', v: sched })
+          if (week !== null) {
+            dispatch({ type: 'SET_PINNED_WEEK', v: Number(week) || 1 })
+            dispatch({ type: 'SET_SELECTED_WEEK', v: Number(week) || 1 })
+          }
+          dispatch({ type: 'SET_PINNED_ANNOUNCEMENTS', v: [] })
+          dispatch({ type: 'VIEW', v: 'home' })
+          toast(dispatch, `Группа ${g.name} определена автоматически`, 'success')
+        } else if (result.groups.length > 1) {
+          toast(dispatch, `Найдено ${result.groups.length} групп — выберите`, 'success')
+        } else {
+          toast(dispatch, 'Группа не найдена, выберите вручную', 'error')
+        }
       } catch (e) {
         dispatch({ type: 'SET_STUDENT_RATING_LOADING', v: false })
+        dispatch({ type: 'SET_SEARCHING_GROUP', v: false })
         toast(dispatch, 'Студент не найден: ' + (e.message || ''), 'error')
       }
     },
+    selectFoundGroup: async (g) => {
+      const sched = await api.scheduleGroup(g.name)
+      const week = await api.currentWeek().catch(() => null)
+      savePinned({ type: 'group', data: g })
+      dispatch({ type: 'SET_PINNED', v: { type: 'group', data: g } })
+      dispatch({ type: 'SET_PINNED_SCHEDULE', v: sched })
+      if (week !== null) {
+        dispatch({ type: 'SET_PINNED_WEEK', v: Number(week) || 1 })
+        dispatch({ type: 'SET_SELECTED_WEEK', v: Number(week) || 1 })
+      }
+      dispatch({ type: 'SET_PINNED_ANNOUNCEMENTS', v: [] })
+      dispatch({ type: 'SET_FOUND_GROUPS', v: null })
+      dispatch({ type: 'VIEW', v: 'home' })
+      toast(dispatch, `Группа ${g.name} закреплена`, 'success')
+    },
+    dismissFoundGroups: () => dispatch({ type: 'SET_FOUND_GROUPS', v: null }),
+    toggleMenu: (v) => dispatch({ type: 'SET_SHOW_MENU', v: v !== undefined ? v : !state.showMenu }),
+    toggleExams: (v) => dispatch({ type: 'SET_SHOW_EXAMS', v: v !== undefined ? v : !state.showExams }),
     logoutStudent: () => {
       saveStudentCard(null)
       dispatch({ type: 'SET_STUDENT_CARD', v: null })

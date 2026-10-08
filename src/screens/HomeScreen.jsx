@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useStore } from '../store.jsx'
 import { Icon } from '../components/Icon.jsx'
 import { Loader } from '../components/Loader.jsx'
@@ -31,6 +31,7 @@ function buildSchedule(days, subgroup, currentWeek) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const result = []
+  const allWeeks = currentWeek === 0
 
   const bsuirDay = (today.getDay() + 6) % 7
   const mondayOfThisWeek = new Date(today)
@@ -47,9 +48,9 @@ function buildSchedule(days, subgroup, currentWeek) {
     const isToday = sameDay(d, today)
 
     let lessons = filterBySubgroup(days[dayName] || [], subgroup)
-    lessons = lessons.filter((l) => lessonMatchesWeek(l, [weekNum]))
+    lessons = lessons.filter((l) => lessonMatchesWeek(l, allWeeks ? [1, 2, 3, 4] : [weekNum]))
     if (lessons.length > 0) {
-      result.push({ date: d, dk: dayName, lessons: sortLessonsByTime(lessons), isToday, weekNum })
+      result.push({ date: d, dk: dayName, lessons: sortLessonsByTime(lessons), isToday, weekNum: allWeeks ? null : weekNum })
     }
   }
 
@@ -68,7 +69,7 @@ export function HomeScreen() {
         </header>
         <div className="empty-state">
           <p>{t('noPinned')}</p>
-          <button className="btn btn-primary" onClick={() => a.setView('search-group')}>
+          <button className="btn btn-primary" onClick={() => a.setView('more')}>
             <Icon name="search" size={16} /> {t('findGroup')}
           </button>
         </div>
@@ -80,8 +81,8 @@ export function HomeScreen() {
     return (
       <div className="screen">
         <header className="screen-header">
-          <div><h1>{pinned.type === 'group' ? `${t('group')} ${pinned.data.name}` : pinned.data.fio || t('loading')}</h1></div>
-          <button className="icon-btn" onClick={() => a.unpin()}><Icon name="x" size={18} /></button>
+          <div><h1>{pinned.type === 'group' ? pinned.data.name : pinned.data.fio || t('loading')}</h1></div>
+          <button className="icon-btn" onClick={() => a.setView('more')}><Icon name="x" size={18} /></button>
         </header>
         <div className="boot-screen"><Loader /></div>
       </div>
@@ -93,7 +94,7 @@ export function HomeScreen() {
       <div className="screen">
         <header className="screen-header">
           <div><h1>{t('error')}</h1></div>
-          <button className="icon-btn" onClick={() => a.unpin()}><Icon name="x" size={18} /></button>
+          <button className="icon-btn" onClick={() => a.setView('more')}><Icon name="x" size={18} /></button>
         </header>
         <div className="error-card glass">
           <p>{s.error}</p>
@@ -108,17 +109,29 @@ export function HomeScreen() {
 
 function ScheduleView() {
   const { s, a } = useStore()
-  const [showExamsOnly, setShowExamsOnly] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
   const schedule = s.pinnedSchedule
   const pinned = s.pinned
+  const showExams = s.showExams
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [menuOpen])
+
   if (!schedule || !pinned) return null
 
-  const title = pinned.type === 'group' ? `${t('group')} ${pinned.data.name}` : pinned.data.fio || ''
+  const title = pinned.type === 'group' ? pinned.data.name : pinned.data.fio || ''
   const subtitle = pinned.type === 'employee' ? (pinned.data.academicDepartment?.[0] || '') : ''
   const days = schedule.schedules || {}
-  const currentWeek = s.selectedWeek || s.pinnedWeek || 1
+  const currentWeek = s.selectedWeek != null ? s.selectedWeek : (s.pinnedWeek || 1)
   const examLessons = schedule.exams || []
-  const filteredDays = buildSchedule(days, s.subgroup, currentWeek)
+  const filteredDays = showExams ? [] : buildSchedule(days, s.subgroup, currentWeek)
 
   return (
     <div className="screen">
@@ -136,22 +149,41 @@ function ScheduleView() {
             </div>
           )}
         </div>
-        <div className="header-actions">
+        <div className="header-actions" ref={menuRef} style={{ position: 'relative' }}>
           <button className="icon-btn" onClick={() => a.refresh()} title={t('refresh')}><Icon name="refresh" size={18} /></button>
-          <button className="icon-btn" onClick={() => a.unpin()} title={t('close')}><Icon name="x" size={18} /></button>
+          <button className={`icon-btn ${menuOpen ? 'active' : ''}`} onClick={() => setMenuOpen(!menuOpen)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+            </svg>
+          </button>
+
+          {menuOpen && (
+            <div className="menu-dropdown">
+              <div className="menu-section">
+                <div className="menu-label">{t('week')}</div>
+                <div className="menu-weeks">
+                  <button className={`menu-week-btn ${currentWeek === 0 ? 'active' : ''}`} onClick={() => { a.setSelectedWeek(0); setMenuOpen(false) }}>
+                    {t('weekAll')}
+                  </button>
+                  {[1, 2, 3, 4].map((w) => (
+                    <button key={w} className={`menu-week-btn ${currentWeek === w ? 'active' : ''}`} onClick={() => { a.setSelectedWeek(w); setMenuOpen(false) }}>
+                      {w}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="menu-divider" />
+              <button className={`menu-action ${showExams ? 'active' : ''}`} onClick={() => { a.toggleExams(!showExams); setMenuOpen(false) }}>
+                <Icon name="book" size={16} />
+                <span>{showExams ? t('showSchedule') : t('showExams')}</span>
+                {examLessons.length > 0 && <span className="menu-badge">{examLessons.length}</span>}
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
-      <WeekBar />
-
-      {examLessons.length > 0 && (
-        <div className="subgroup-bar">
-          <button className={`chip ${!showExamsOnly ? 'active' : ''}`} onClick={() => setShowExamsOnly(false)}>{t('tabSchedule')}</button>
-          <button className={`chip ${showExamsOnly ? 'active' : ''}`} onClick={() => setShowExamsOnly(true)}>{t('exams')} ({examLessons.length})</button>
-        </div>
-      )}
-
-      {!showExamsOnly && (
+      {!showExams && (
         <div className="schedule-days">
           {filteredDays.length === 0 && (
             <div className="empty-state"><p>{t('noLessons')}</p><span>{t('noLessonsDesc')}</span></div>
@@ -163,7 +195,7 @@ function ScheduleView() {
                 <div className="day-header">
                   <span className="day-name">{dk}</span>
                   <span className="day-date">{date.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span>
-                  <span className="day-week-badge">{t('week')} {weekNum}</span>
+                  {weekNum && <span className="day-week-badge">{t('week')} {weekNum}</span>}
                   {isToday && <span className="today-badge">{t('today')}</span>}
                 </div>
                 <div className="day-lessons">
@@ -183,7 +215,7 @@ function ScheduleView() {
         </div>
       )}
 
-      {showExamsOnly && (
+      {showExams && (
         <div className="schedule-days">
           {examLessons.length === 0 ? (
             <div className="empty-state"><p>{t('noExams')}</p></div>
@@ -193,7 +225,7 @@ function ScheduleView() {
         </div>
       )}
 
-      {pinned.type === 'employee' && s.pinnedAnnouncements?.length > 0 && (
+      {!showExams && pinned.type === 'employee' && s.pinnedAnnouncements?.length > 0 && (
         <div className="announcements-section">
           <h3 className="section-title">{t('announcements')}</h3>
           {s.pinnedAnnouncements.map((an, i) => {
@@ -250,7 +282,7 @@ function LessonCard({ lesson, isExam, isToday }) {
         <div className="lesson-top">
           <span className="lesson-type" style={{ color }}>
             {lessonNum && <span className="lesson-num">{lessonNum}</span>}
-            {isExam ? 'Экзамен' : lessonTypeName(lesson.lessonTypeAbbrev || lesson.lessonType)}
+            {isExam ? t('examSchedule') : lessonTypeName(lesson.lessonTypeAbbrev || lesson.lessonType)}
           </span>
           <span className="lesson-time">{lessonTime(lesson.startLessonTime, lesson.endLessonTime)}</span>
         </div>
@@ -280,24 +312,6 @@ function BreakIndicator({ after }) {
       <span className="break-line" />
       <span className="break-text">{brk.minutes} {t('breakMin')}</span>
       <span className="break-line" />
-    </div>
-  )
-}
-
-function WeekBar() {
-  const { s, a } = useStore()
-  const week = s.selectedWeek || s.pinnedWeek || 1
-  return (
-    <div className="week-bar glass">
-      <div className="week-info">
-        <Icon name="calendar" size={16} />
-        <span>{t('week')} <strong>{week}</strong> {t('weekOf')} 4</span>
-      </div>
-      <div className="week-dots">
-        {[1, 2, 3, 4].map((w) => (
-          <button key={w} className={`week-dot ${w === week ? 'active' : ''}`} onClick={() => a.setSelectedWeek(w)} />
-        ))}
-      </div>
     </div>
   )
 }

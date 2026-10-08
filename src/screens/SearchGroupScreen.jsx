@@ -28,7 +28,7 @@ export function SearchGroupScreen() {
     <div className="screen">
       <header className="screen-header">
         <div><h1>{t('group')}</h1><p className="screen-sub">{t('enterGroup')}</p></div>
-        <button className="icon-btn" onClick={() => a.setView('home')}><Icon name="arrow-left" size={18} /></button>
+        <button className="icon-btn" onClick={() => a.setView('more')}><Icon name="arrow-left" size={18} /></button>
       </header>
       <div className="search-field glass">
         <Icon name="search" size={16} />
