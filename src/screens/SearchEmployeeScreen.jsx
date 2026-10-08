@@ -44,8 +44,8 @@ export function SearchEmployeeScreen() {
       <div className="search-results">
         {loading && employees.length === 0 && <div style={{ padding: '40px', textAlign: 'center' }}><Loader /></div>}
         {!loading && employees.length === 0 && query && <div className="empty-state"><p>{t('nothingFound')}</p></div>}
-        {employees.map((e) => (
-          <button key={e.id || e.urlId} className="search-item glass" onClick={() => a.previewEmployee(e)}>
+        {employees.map((e, i) => (
+          <button key={e.id || e.urlId} className="search-item glass" style={{ '--i': i }} onClick={() => a.previewEmployee(e)}>
             <span className="search-item-main">
               <strong>{formatName(e)}</strong>
               {e.academicDepartment?.[0] && <small>{e.academicDepartment[0]}</small>}

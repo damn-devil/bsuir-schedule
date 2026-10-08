@@ -152,7 +152,7 @@ export function PreviewScreen() {
   const title = preview.type === 'group' ? `${t('group')} ${preview.data.name}` : preview.data.fio || ''
   const subtitle = preview.type === 'employee' ? (preview.data.academicDepartment?.[0] || '') : ''
   const days = schedule.schedules || {}
-  const currentWeek = selectedPreviewWeek || localWeek || 1
+  const currentWeek = localWeek || 1
   const examLessons = schedule.exams || []
   const filteredDays = buildSchedule(days, s.subgroup, currentWeek)
 
@@ -198,11 +198,6 @@ export function PreviewScreen() {
           <Icon name="calendar" size={16} />
           <span>{t('week')} <strong>{currentWeek}</strong> {t('weekOf')} 4</span>
         </div>
-        <div className="week-dots">
-          {[1, 2, 3, 4].map((w) => (
-            <button key={w} className={`week-dot ${w === currentWeek ? 'active' : ''}`} onClick={() => setSelectedPreviewWeek(w)} />
-          ))}
-        </div>
       </div>
 
       {examLessons.length > 0 && (
@@ -213,14 +208,14 @@ export function PreviewScreen() {
       )}
 
       {!showExamsOnly && (
-        <div className="schedule-days">
+        <div className="schedule-days morph-in" key="sched">
           {filteredDays.length === 0 && (
             <div className="empty-state"><p>{t('noLessons')}</p><span>{t('noLessonsDesc')}</span></div>
           )}
 
-          {filteredDays.map(({ date, dk, lessons, isToday, weekNum }) => {
+          {filteredDays.map(({ date, dk, lessons, isToday, weekNum }, di) => {
             return (
-              <div key={date.toISOString()} className={`day-section ${isToday ? 'today' : ''}`}>
+              <div key={date.toISOString()} className={`day-section ${isToday ? 'today' : ''}`} style={{ '--i': di }}>
                 <div className="day-header">
                   <span className="day-name">{dk}</span>
                   <span className="day-date">{date.toLocaleDateString(getLang() === 'en' ? 'en-US' : 'ru-RU', { day: 'numeric', month: 'short' })}</span>
@@ -245,11 +240,15 @@ export function PreviewScreen() {
       )}
 
       {showExamsOnly && (
-        <div className="schedule-days">
+        <div className="schedule-days morph-in" key="exams">
           {examLessons.length === 0 ? (
             <div className="empty-state"><p>{t('noExams')}</p></div>
           ) : (
-            examLessons.map((l, i) => <LessonCard key={`exam-${i}`} lesson={l} isExam />)
+            examLessons.map((l, i) => (
+              <div key={`exam-${i}`} className="stagger-item" style={{ '--i': i }}>
+                <LessonCard lesson={l} isExam />
+              </div>
+            ))
           )}
         </div>
       )}
@@ -280,6 +279,7 @@ export function PreviewScreen() {
 
 function LessonCard({ lesson, isExam, isToday }) {
   const [, setTick] = useState(0)
+  const [open, setOpen] = useState(false)
   const color = isExam ? '#8b5cf6' : lessonColor(lesson.lessonTypeAbbrev || lesson.lessonType)
   const weeks = lesson.weekNumber || []
   const weekStr = Array.isArray(weeks) && weeks.length ? `${t('lessonWeeks')}: ${weeks.join(', ')}` : ''
@@ -300,7 +300,7 @@ function LessonCard({ lesson, isExam, isToday }) {
   }, [nowActive])
 
   return (
-    <div className={`lesson-card glass ${isExam ? 'exam' : ''} ${nowActive ? 'is-now' : ''}`}>
+    <div className={`lesson-card glass ${isExam ? 'exam' : ''} ${nowActive ? 'is-now' : ''} ${open ? 'is-open' : ''}`} onClick={() => setOpen(o => !o)}>
       <div className="lesson-timer-col">
         <div className="lesson-color" style={{ background: color }} />
         <div className="lesson-timer-track">
@@ -311,16 +311,21 @@ function LessonCard({ lesson, isExam, isToday }) {
         <div className="lesson-top">
           <span className="lesson-type" style={{ color }}>
             {lessonNum && <span className="lesson-num">{lessonNum}</span>}
-            {isExam ? 'Экзамен' : lessonTypeName(lesson.lessonTypeAbbrev || lesson.lessonType)}
+            {isExam ? t('examSchedule') : lessonTypeName(lesson.lessonTypeAbbrev || lesson.lessonType)}
           </span>
-          <span className="lesson-time">{lessonTime(lesson.startLessonTime, lesson.endLessonTime)}</span>
+          <span className="lesson-top-right">
+            <span className="lesson-time">{lessonTime(lesson.startLessonTime, lesson.endLessonTime)}</span>
+            <span className={`lesson-chevron ${open ? 'open' : ''}`}><Icon name="chevron-right" size={14} /></span>
+          </span>
         </div>
         <div className="lesson-name">{lesson.subject || lesson.name || ''}</div>
         {empStr && <div className="lesson-detail"><Icon name="user" size={12} /> {empStr}</div>}
         {audStr && <div className="lesson-detail"><Icon name="map" size={12} /> {audStr}</div>}
-        <div className="lesson-footer">
-          {weekStr && <span className="lesson-weeks">{weekStr}</span>}
-          {numSub > 0 && <span className="lesson-subgroup">{t('subgroupShort')} {numSub}</span>}
+        <div className="lesson-footer-wrap">
+          <div className="lesson-footer">
+            {weekStr && <span className="lesson-weeks">{weekStr}</span>}
+            {numSub > 0 && <span className="lesson-subgroup">{t('subgroupShort')} {numSub}</span>}
+          </div>
         </div>
         {isToday && nowActive && timer.isNow && (
           <div className="lesson-countdown" style={{ color }}>

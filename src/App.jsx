@@ -19,8 +19,10 @@ function TabBar() {
     { id: 'student', icon: 'book', label: t('tabGrades') },
     { id: 'more', icon: 'settings', label: t('tabMore') },
   ]
+  const idx = Math.max(0, tabs.findIndex((tab) => tab.id === s.view))
   return (
-    <nav className="tab-bar" aria-label="Navigation">
+    <nav className="tab-bar" style={{ '--idx': idx }} aria-label="Navigation">
+      <span className="tab-pill" aria-hidden="true" />
       {tabs.map((tab) => (
         <button key={tab.id} className={`tab-item ${s.view === tab.id ? 'active' : ''}`} onClick={() => a.setView(tab.id)}>
           <span className="tab-icon"><Icon name={tab.icon} /></span>

@@ -24,6 +24,18 @@
   --chip-active-fg: #ffffff;
   --btn-bg: #f2f2f7;
   --btn-fg: #000000;
+
+  --day-bg: #ffffff;
+  --day-bd: rgba(0,0,0,0.14);
+  --day-shadow: 0 10px 30px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.05);
+  --today-ring: #000000;
+  --lesson-bg: #000000;
+  --lesson-fg: #ffffff;
+  --lesson-fg2: rgba(255,255,255,0.62);
+  --lesson-inv: #ffffff;
+  --lesson-inv-fg: #000000;
+  --lesson-line: rgba(255,255,255,0.22);
+  --lesson-ring: #ffffff;
   --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
   --shadow-pop: 0 4px 12px rgba(0,0,0,0.12), 0 16px 48px rgba(0,0,0,0.14);
   --radius-card: 24px;
@@ -57,6 +69,18 @@
   --btn-fg: #ffffff;
   --shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.3);
   --shadow-pop: 0 4px 12px rgba(0,0,0,0.5), 0 16px 48px rgba(0,0,0,0.5);
+
+  --day-bg: #000000;
+  --day-bd: rgba(255,255,255,0.24);
+  --day-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
+  --today-ring: #ffffff;
+  --lesson-bg: #ffffff;
+  --lesson-fg: #000000;
+  --lesson-fg2: rgba(0,0,0,0.55);
+  --lesson-inv: #000000;
+  --lesson-inv-fg: #ffffff;
+  --lesson-line: rgba(0,0,0,0.16);
+  --lesson-ring: #000000;
 }
 
 html, body { height: 100%; }
@@ -89,6 +113,7 @@ input { font-family: inherit; border: none; outline: none; background: transpare
   background: var(--glass); border: none;
   backdrop-filter: none; -webkit-backdrop-filter: none;
   border-radius: var(--radius-card); box-shadow: var(--shadow-card);
+  transition: background 0.4s var(--ease), box-shadow 0.4s var(--ease);
 }
 
 .boot-screen { min-height: 100dvh; display: flex; align-items: center; justify-content: center; }
@@ -114,7 +139,7 @@ input { font-family: inherit; border: none; outline: none; background: transpare
   margin: -20px -16px 18px;
   padding: calc(20px + env(safe-area-inset-top, 0px)) 16px 14px;
   background: var(--bg);
-  transition: background 0.35s var(--ease);
+  transition: background 0.4s var(--ease);
 }
 .screen-header h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.7px; line-height: 1.1; }
 .screen-sub { color: var(--text2); font-size: 14px; margin-top: 4px; }
@@ -126,7 +151,7 @@ input { font-family: inherit; border: none; outline: none; background: transpare
   padding: 12px 22px; min-height: 44px; border-radius: 999px;
   font-size: 15px; font-weight: 700; border: none;
   background: var(--btn-bg); color: var(--btn-fg);
-  transition: transform 0.18s var(--spring), opacity 0.18s ease, background 0.2s ease;
+  transition: transform 0.18s var(--spring), opacity 0.18s ease, background 0.4s var(--ease), color 0.4s var(--ease);
 }
 .btn:active { transform: scale(0.96); opacity: 0.85; }
 .btn:disabled { opacity: 0.4; }
@@ -139,7 +164,7 @@ input { font-family: inherit; border: none; outline: none; background: transpare
   width: 40px; height: 40px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   background: var(--surface);
-  transition: transform 0.18s var(--spring), background 0.2s ease;
+  transition: transform 0.18s var(--spring), background 0.4s var(--ease), color 0.4s var(--ease);
 }
 .icon-btn:active { transform: scale(0.88); }
 .icon-btn.active { background: var(--text); color: var(--bg); }
@@ -244,7 +269,7 @@ input { font-family: inherit; border: none; outline: none; background: transpare
   padding: 8px 16px; border-radius: 999px; background: var(--chip-bg);
   border: none; font-size: 13px; font-weight: 700;
   color: var(--text2); white-space: nowrap;
-  transition: transform 0.16s var(--spring), background 0.2s ease, color 0.2s ease;
+  transition: transform 0.16s var(--spring), background 0.4s var(--ease), color 0.4s var(--ease);
 }
 .chip:active { transform: scale(0.93); }
 .chip.active { background: var(--chip-active-bg); color: var(--chip-active-fg); }
@@ -252,15 +277,27 @@ input { font-family: inherit; border: none; outline: none; background: transpare
 /* SCHEDULE */
 .schedule-days { display: flex; flex-direction: column; gap: 16px; }
 .day-section {
-  animation: slidein 0.34s var(--ease);
-  background: var(--card);
+  animation: day-in 0.5s var(--spring) backwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+  background: var(--day-bg);
+  border: 1.5px solid var(--day-bd);
   border-radius: var(--radius-card);
   padding: 16px;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--day-shadow);
+  transition: background 0.4s var(--ease), border-color 0.4s var(--ease), box-shadow 0.4s var(--ease);
 }
-@keyframes slidein { from { opacity: 0; transform: translateY(10px) scale(0.99); } to { opacity: 1; transform: none; } }
-.day-section.today { box-shadow: var(--shadow-card), inset 0 0 0 2px var(--text); }
-.day-section.today .day-header .day-name { color: var(--text); }
+@keyframes day-in { from { opacity: 0; transform: translateY(18px) scale(0.95); } to { opacity: 1; transform: none; } }
+.stagger-item {
+  animation: day-in 0.5s var(--spring) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+.morph-in { animation: morph-in 0.45s var(--ease); }
+@keyframes morph-in {
+  from { opacity: 0; transform: scale(0.95); filter: blur(5px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.day-section.today { border-color: var(--today-ring); box-shadow: var(--day-shadow), inset 0 0 0 2px var(--today-ring); }
+.day-section.today .day-header .day-name { color: var(--today-ring); }
 .day-header {
   display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
   font-size: 15px; font-weight: 800; color: var(--text);
@@ -279,26 +316,37 @@ input { font-family: inherit; border: none; outline: none; background: transpare
 
 .lesson-card {
   display: flex; overflow: hidden; border-radius: 18px;
-  transition: transform 0.16s var(--spring);
-  background: var(--surface);
-  box-shadow: none;
+  background: var(--lesson-bg); color: var(--lesson-fg);
+  box-shadow: none; cursor: pointer;
+  transition: transform 0.2s var(--spring), background 0.4s var(--ease), color 0.4s var(--ease), box-shadow 0.3s var(--ease);
 }
 .lesson-card:active { transform: scale(0.98); }
-.lesson-card.is-now { box-shadow: inset 0 0 0 2px var(--text); }
+.lesson-card.is-now { box-shadow: inset 0 0 0 2px var(--lesson-ring); }
+.lesson-card:active { animation: card-pop 0.3s var(--spring); }
+@keyframes card-pop { 40% { transform: scale(0.965); } }
 .lesson-timer-col { display: flex; flex-direction: column; width: 5px; flex-shrink: 0; min-height: 60px; }
 .lesson-color { width: 100%; flex-shrink: 0; height: 100%; }
-.lesson-timer-track { flex: 1; width: 100%; position: relative; overflow: hidden; background: var(--separator); }
+.lesson-timer-track { flex: 1; width: 100%; position: relative; overflow: hidden; background: var(--lesson-line); }
 .lesson-timer-fill { position: absolute; bottom: 0; left: 0; right: 0; transition: height 1s linear; }
-.lesson-body { flex: 1; padding: 12px 14px; }
-.lesson-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.lesson-body { flex: 1; padding: 12px 14px; min-width: 0; }
+.lesson-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 8px; }
+.lesson-top-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.lesson-chevron {
+  display: flex; color: var(--lesson-fg2);
+  transition: transform 0.4s var(--spring), color 0.4s var(--ease);
+}
+.lesson-chevron.open { transform: rotate(90deg); }
 .lesson-type { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; display: flex; align-items: center; gap: 5px; }
-.lesson-num { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 6px; background: var(--text); color: var(--bg); font-size: 9px; font-weight: 900; flex-shrink: 0; }
-.lesson-time { font-size: 12px; color: var(--text2); font-variant-numeric: tabular-nums; font-weight: 600; }
+.lesson-num { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 6px; background: var(--lesson-inv); color: var(--lesson-inv-fg); font-size: 9px; font-weight: 900; flex-shrink: 0; transition: background 0.4s var(--ease), color 0.4s var(--ease); }
+.lesson-time { font-size: 12px; color: var(--lesson-fg2); font-variant-numeric: tabular-nums; font-weight: 600; transition: color 0.4s var(--ease); }
 .lesson-name { font-size: 14px; font-weight: 700; line-height: 1.3; margin-bottom: 4px; }
-.lesson-detail { font-size: 11px; color: var(--text2); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
-.lesson-footer { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-.lesson-weeks { font-size: 10px; color: var(--text2); background: var(--card); padding: 3px 9px; border-radius: 999px; font-weight: 700; }
-.lesson-subgroup { font-size: 10px; color: var(--text); background: var(--card); padding: 3px 9px; border-radius: 999px; font-weight: 800; }
+.lesson-detail { font-size: 11px; color: var(--lesson-fg2); display: flex; align-items: center; gap: 4px; margin-top: 2px; transition: color 0.4s var(--ease); }
+.lesson-footer-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.45s var(--ease); }
+.lesson-card.is-open .lesson-footer-wrap { grid-template-rows: 1fr; }
+.lesson-footer { display: flex; gap: 6px; flex-wrap: wrap; overflow: hidden; min-height: 0; padding-top: 0; transition: padding-top 0.45s var(--ease); }
+.lesson-card.is-open .lesson-footer { padding-top: 8px; }
+.lesson-weeks { font-size: 10px; color: var(--lesson-fg2); background: transparent; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--lesson-line); font-weight: 700; transition: color 0.4s var(--ease), border-color 0.4s var(--ease); }
+.lesson-subgroup { font-size: 10px; color: var(--lesson-fg); background: transparent; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--lesson-line); font-weight: 800; transition: color 0.4s var(--ease), border-color 0.4s var(--ease); }
 .lesson-countdown { display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
 .break-indicator { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
@@ -331,7 +379,9 @@ input { font-family: inherit; border: none; outline: none; background: transpare
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 14px 14px; border-radius: 18px; text-align: left; box-sizing: border-box;
   background: var(--surface);
-  transition: transform 0.16s var(--spring);
+  transition: transform 0.16s var(--spring), background 0.4s var(--ease);
+  animation: day-in 0.4s var(--spring) backwards;
+  animation-delay: calc(min(var(--i, 0), 8) * 40ms);
 }
 .search-item:active { transform: scale(0.97); }
 .search-item-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -404,30 +454,40 @@ input { font-family: inherit; border: none; outline: none; background: transpare
 /* TAB BAR (Dynamic Island) */
 .tab-bar {
   position: fixed; bottom: calc(14px + var(--safe-bottom)); left: 50%;
-  transform: translateX(-50%); display: flex; align-items: center; gap: 4px;
+  transform: translateX(-50%); display: flex; align-items: center; gap: 0;
   width: fit-content; max-width: calc(100vw - 24px); height: 56px;
   background: var(--tab-bg); border: none;
   border-radius: 999px; box-shadow: var(--shadow-pop);
   padding: 5px; z-index: 50;
   animation: tab-in 0.5s var(--ease);
+  transition: background 0.4s var(--ease);
 }
 @keyframes tab-in { from { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.9); } }
+.tab-pill {
+  position: absolute; z-index: 0; top: 5px; bottom: 5px; left: 5px;
+  width: calc((100% - 10px) / 3);
+  background: var(--tab-active-bg); border-radius: 999px;
+  transform: translateX(calc(var(--idx, 0) * 100%));
+  transition: transform 0.5s var(--spring), background 0.4s var(--ease);
+}
 .tab-item {
-  display: flex; align-items: center; justify-content: center; gap: 7px;
-  min-width: 56px; height: 46px; padding: 0 18px; border-radius: 999px;
+  position: relative; z-index: 1;
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 0;
+  min-width: 62px; height: 46px; padding: 0 16px; border-radius: 999px;
   color: var(--tab-fg); background: transparent;
-  transition: background 0.3s var(--ease), color 0.3s var(--ease), transform 0.2s var(--spring);
+  transition: color 0.35s var(--ease), transform 0.2s var(--spring);
 }
-.tab-item.active {
-  background: var(--tab-active-bg); color: var(--tab-active-fg);
-}
+.tab-item.active { color: var(--tab-active-fg); }
 .tab-item:active { transform: scale(0.94); }
-.tab-icon { display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; }
+.tab-icon { display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex-shrink: 0; }
 .tab-icon svg { width: 16px; height: 16px; stroke-width: 2.4; }
-.tab-label { font-size: 12px; font-weight: 700; letter-spacing: -0.01em; }
-.tab-item:not(.active) .tab-label { display: none; }
-.tab-item.active .tab-label { animation: label-in 0.3s var(--spring); }
-@keyframes label-in { from { opacity: 0; transform: translateX(-6px); } }
+.tab-label {
+  font-size: 12px; font-weight: 700; letter-spacing: -0.01em;
+  max-width: 0; opacity: 0; overflow: hidden; white-space: nowrap;
+  transition: max-width 0.45s var(--ease), opacity 0.3s ease, margin 0.45s var(--ease);
+  margin-left: 0;
+}
+.tab-item.active .tab-label { max-width: 100px; opacity: 1; margin-left: 7px; }
 
 /* TOAST */
 .toast {
@@ -436,6 +496,7 @@ input { font-family: inherit; border: none; outline: none; background: transpare
   background: var(--text); color: var(--bg); padding: 13px 22px;
   border-radius: 999px; font-size: 13px; font-weight: 700;
   animation: toast-in 0.4s var(--spring);
+  transition: background 0.4s var(--ease), color 0.4s var(--ease);
   max-width: 90%; text-align: center;
 }
 .toast.success { background: var(--green); color: #fff; }
@@ -449,6 +510,7 @@ input { font-family: inherit; border: none; outline: none; background: transpare
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px 10px 16px; border-radius: 999px;
   background: var(--text); color: var(--bg);
+  transition: background 0.4s var(--ease), color 0.4s var(--ease);
   box-shadow: var(--shadow-pop);
   animation: toast-in 0.4s var(--spring);
 }
