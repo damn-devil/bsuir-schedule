@@ -1,4 +1,4 @@
-const CACHE = 'bsuir-v2'
+const CACHE = 'bsuir-v3'
 const SCOPE = (self.registration && self.registration.scope) || self.location.origin + '/'
 const scopeUrl = (p) => new URL(p, SCOPE).href
 
